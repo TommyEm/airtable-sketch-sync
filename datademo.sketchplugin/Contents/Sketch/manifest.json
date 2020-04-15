@@ -1,0 +1,29 @@
+{
+  "compatibleVersion": 3,
+  "bundleVersion": 1,
+  "icon": "icon.png",
+  "suppliesData": true,
+  "commands": [
+    {
+      "script": "my-command.js",
+      "handlers": {
+        "actions": {
+          "Startup": "onStartup",
+          "Shutdown": "onShutdown",
+          "SupplyData": "onSupplyData"
+        }
+      }
+    }
+  ],
+  "menu": {
+    "title": "datademo"
+  },
+  "version": "0.1.0",
+  "description": "A DataSupplier plugin",
+  "name": "datademo",
+  "identifier": "datademo",
+  "disableCocoaScriptPreprocessor": true,
+  "appcast": "https://raw.githubusercontent.com//master/.appcast.xml",
+  "author": "Tommy Mabrier",
+  "authorEmail": "tommy.mabrier@kubity.com"
+}

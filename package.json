@@ -1,0 +1,27 @@
+{
+  "name": "sketch-airtable-sync",
+  "version": "0.1.0",
+  "description": "A DataSupplier plugin",
+  "engines": {
+    "sketch": ">=3.0"
+  },
+  "skpm": {
+    "name": "sketch-airtable-sync",
+    "manifest": "src/manifest.json",
+    "main": "sketch-airtable-sync.sketchplugin",
+    "assets": [
+      "assets/**/*"
+    ]
+  },
+  "scripts": {
+    "build": "skpm-build",
+    "watch": "skpm-build --watch",
+    "start": "skpm-build --watch --run",
+    "postinstall": "npm run build && skpm-link"
+  },
+  "devDependencies": {
+    "@skpm/builder": "^0.5.2",
+    "airtable": "^0.8.1"
+  },
+  "author": "Tommy Mabrier <tommy.mabrier@kubity.com>"
+}

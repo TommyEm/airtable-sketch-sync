@@ -752,7 +752,7 @@ function onShutdown() {
   DataSupplier.deregisterDataSuppliers();
 }
 function onSupplyData(context) {
-  var dataKey = context.data.key;
+  var sketchDataKey = context.data.key;
   var items = util.toArray(context.data.items).map(sketch.fromNative); // We iterate on each target for data
 
   items.forEach(function (item, index) {
@@ -762,7 +762,7 @@ function onSupplyData(context) {
       layerName = item.override.affectedLayer.name;
     } else if (item.type === 'Text') {
       layerName = item.name;
-    } // console.log(layerName);
+    } // console.log('layer', layerName);
 
 
     var layer;
@@ -786,14 +786,14 @@ function onSupplyData(context) {
       fetch(apiEndpoint).then(function (res) {
         return res.json();
       }).then(function (data) {
-        data.records.map(function (record, index) {
+        data.records.reverse().map(function (record, index) {
           // let { contentID, 'Copy Content': copy } = record.fields;
           if (record.fields.Key === layerName) {
-            var _data = record.fields.Key;
-            console.log(dataKey);
-            console.log(_data);
-            console.log(index);
-            DataSupplier.supplyDataAtIndex(dataKey, _data, index);
+            // const airtableDataKey = record.fields.Key;
+            var _data = record.fields[lang];
+            console.log('sketchDataKey', sketchDataKey);
+            console.log('data', _data);
+            DataSupplier.supplyDataAtIndex(sketchDataKey, _data, index);
           }
         });
       }).catch(function (error) {
@@ -821,7 +821,7 @@ function onSupplyData(context) {
       // 	});
       // console.log(base('Success').find('rec1l5DNXef6v3Oq4'));
     } // let data = Math.random().toString();
-    // DataSupplier.supplyDataAtIndex(dataKey, data, index);
+    // DataSupplier.supplyDataAtIndex(sketchDataKey, data, index);
 
   });
 }

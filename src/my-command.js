@@ -22,7 +22,7 @@ export function onShutdown() {
 }
 
 export function onSupplyData(context) {
-	let dataKey = context.data.key;
+	let sketchDataKey = context.data.key;
 	const items = util.toArray(context.data.items).map(sketch.fromNative);
 
 
@@ -35,7 +35,7 @@ export function onSupplyData(context) {
 		} else if (item.type === 'Text') {
 			layerName = item.name;
 		}
-		// console.log(layerName);
+		// console.log('layer', layerName);
 
 
 		let layer;
@@ -60,15 +60,16 @@ export function onSupplyData(context) {
 			fetch(apiEndpoint)
 				.then((res) => res.json())
 				.then((data) => {
-					data.records.map((record, index) => {
+					data.records.reverse().map((record, index) => {
 						// let { contentID, 'Copy Content': copy } = record.fields;
 						if (record.fields.Key === layerName) {
-							const data = record.fields.Key;
-							console.log(dataKey);
-							console.log(data);
-							console.log(index);
-							DataSupplier.supplyDataAtIndex(dataKey, data, index);
+							// const airtableDataKey = record.fields.Key;
+							const data = record.fields[lang];
 
+							console.log('sketchDataKey', sketchDataKey);
+							console.log('data', data);
+							
+							DataSupplier.supplyDataAtIndex(sketchDataKey, data, index);
 						}
 					})
 				})
@@ -110,6 +111,6 @@ export function onSupplyData(context) {
 
 
 		// let data = Math.random().toString();
-		// DataSupplier.supplyDataAtIndex(dataKey, data, index);
+		// DataSupplier.supplyDataAtIndex(sketchDataKey, data, index);
 	})
 }

@@ -25,6 +25,8 @@ export function onSupplyData(context) {
 	let sketchDataKey = context.data.key;
 	const items = util.toArray(context.data.items).map(sketch.fromNative);
 
+	// Create UI
+	createSettingsModal();
 
 	// We iterate on each target for data
 	items.forEach((item, index) => {
@@ -35,7 +37,7 @@ export function onSupplyData(context) {
 		} else if (item.type === 'Text') {
 			layerName = item.name;
 		}
-		// console.log('layer', layerName);
+		// console.log('layername', layerName);
 
 
 		let layer;
@@ -114,3 +116,37 @@ export function onSupplyData(context) {
 		// DataSupplier.supplyDataAtIndex(sketchDataKey, data, index);
 	})
 }
+
+
+function createSettingsModal() {
+	const modal = NSAlert.alloc().init(),
+		modalIconPath = context.plugin.urlForResourceNamed('icon.png').path(),
+		modalIcon = NSImage.alloc().initByReferencingFile(modalIconPath),
+		modalContent = NSView.alloc().init();
+
+	modal.setIcon(modalIcon);
+	modal.setMessageText('Airtable');
+	modal.setInformativeText('lorem');
+
+	// const select = createSelect(items, selectedItemIndex, frame);
+	// modalContent.addSubview(select);
+
+	modal.accessoryView = modalContent;
+
+
+	// Display modal
+	modal.runModal();
+}
+
+
+// function createSelect(items, selectedItemIndex, frame) {
+// 	const comboBox = NSComboBox.alloc().initWithFrame(frame),
+// 		selectedItemIndex = (selectedItemIndex > -1) ? selectedItemIndex : 0;
+
+// 	comboBox.addItemsWithObjectValues(items);
+// 	comboBox.selectItemAtIndex(selectedItemIndex);
+// 	comboBox.setNumberOfVisibleItems(16);
+// 	comboBox.setCompletes(1);
+
+// 	return comboBox;
+// }

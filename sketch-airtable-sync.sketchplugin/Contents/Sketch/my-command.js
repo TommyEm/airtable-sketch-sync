@@ -712,6 +712,75 @@ module.exports = fetch;
 
 /***/ }),
 
+/***/ "./src/lib/ui.js":
+/*!***********************!*\
+  !*** ./src/lib/ui.js ***!
+  \***********************/
+/*! exports provided: setKeyOrder, createBoldLabel, createField, createSelect */
+/***/ (function(module, __webpack_exports__, __webpack_require__) {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "setKeyOrder", function() { return setKeyOrder; });
+/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "createBoldLabel", function() { return createBoldLabel; });
+/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "createField", function() { return createField; });
+/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "createSelect", function() { return createSelect; });
+function setKeyOrder(alert, order) {
+  for (var i = 0; i < order.length; i++) {
+    var thisItem = order[i],
+        nextItem = order[i + 1];
+    if (nextItem) thisItem.setNextKeyView(nextItem);
+  }
+
+  alert.window().setInitialFirstResponder(order[0]);
+}
+/**
+ * Create a label with bold style
+ * @param {string} text 
+ * @param {number} size 
+ * @param {object} frame 
+ */
+
+function createBoldLabel(text, size, frame) {
+  var label = NSTextField.alloc().initWithFrame(frame);
+  label.setStringValue(text);
+  label.setFont(NSFont.boldSystemFontOfSize(size));
+  label.setBezeled(false);
+  label.setDrawsBackground(false);
+  label.setEditable(false);
+  label.setSelectable(false);
+  return label;
+}
+/**
+ * Create a text field
+ * @param {string} value 
+ * @param {object} frame 
+ */
+
+function createField(value, frame) {
+  var field = NSTextField.alloc().initWithFrame(frame);
+  field.setStringValue(value);
+  return field;
+}
+/**
+ * Create a select field
+ * @param {array} items 
+ * @param {number} selectedItemIndex 
+ * @param {object} frame 
+ */
+
+function createSelect(items, selectedItemIndex, frame) {
+  var comboBox = NSComboBox.alloc().initWithFrame(frame),
+      selectedItemIndex2 = selectedItemIndex > -1 ? selectedItemIndex : 0;
+  comboBox.addItemsWithObjectValues(items);
+  comboBox.selectItemAtIndex(selectedItemIndex2);
+  comboBox.setNumberOfVisibleItems(16);
+  comboBox.setCompletes(1);
+  return comboBox;
+}
+
+/***/ }),
+
 /***/ "./src/my-command.js":
 /*!***************************!*\
   !*** ./src/my-command.js ***!
@@ -735,15 +804,30 @@ var fetch = __webpack_require__(/*! sketch-polyfill-fetch */ "./node_modules/ske
 
 var _require = __webpack_require__(/*! ./secret */ "./src/secret.js"),
     APIKey = _require.APIKey,
-    base = _require.base,
+    bases = _require.bases,
     table = _require.table,
     view = _require.view;
+
+var _require2 = __webpack_require__(/*! ./lib/ui */ "./src/lib/ui.js"),
+    createBoldLabel = _require2.createBoldLabel,
+    createField = _require2.createField,
+    createSelect = _require2.createSelect,
+    setKeyOrder = _require2.setKeyOrder;
 
 var document = __webpack_require__(/*! sketch/dom */ "sketch/dom").getSelectedDocument(); // const base = new Airtable({ apiKey: 'keyf4awab19Xtmlye' }).base('appvF01ICAgG9SQ7w');
 
 
-var records = 15;
-var lang = 'en_US';
+var baseNames = Object.keys(bases).map(function (base) {
+  return base;
+});
+var langs = ['en_US', 'en_UK', 'fr_FR']; // Setting variables
+
+var defaultSettings = {};
+defaultSettings.APIKey = APIKey;
+defaultSettings.base = bases.rvt2skp;
+defaultSettings.maxRecords = 15;
+defaultSettings.view = view;
+defaultSettings.lang = langs[0];
 function onStartup() {
   DataSupplier.registerDataSupplier('public.text', 'Sketch Airtable Sync', 'SupplyData');
 }
@@ -755,7 +839,8 @@ function onSupplyData(context) {
   var sketchDataKey = context.data.key;
   var items = util.toArray(context.data.items).map(sketch.fromNative); // Create UI
 
-  createSettingsModal(); // We iterate on each target for data
+  var userSettings = getUserSettings(defaultSettings);
+  log(userSettings); // We iterate on each target for data
 
   items.forEach(function (item, index) {
     var layerName;
@@ -784,7 +869,7 @@ function onSupplyData(context) {
 
     if (layer.getParentArtboard()) {
       var _table = layer.getParentArtboard().name;
-      var apiEndpoint = encodeURI("https://api.airtable.com/v0/".concat(base, "/").concat(_table, "?maxRecords=").concat(records, "&view=").concat(view, "&api_key=").concat(APIKey));
+      var apiEndpoint = encodeURI("https://api.airtable.com/v0/".concat(userSettings.base, "/").concat(_table, "?maxRecords=").concat(userSettings.maxRecords, "&view=").concat(userSettings.view, "&api_key=").concat(userSettings.APIKey));
       fetch(apiEndpoint).then(function (res) {
         return res.json();
       }).then(function (data) {
@@ -792,9 +877,9 @@ function onSupplyData(context) {
           // let { contentID, 'Copy Content': copy } = record.fields;
           if (record.fields.Key === layerName) {
             // const airtableDataKey = record.fields.Key;
-            var _data = record.fields[lang];
-            console.log('sketchDataKey', sketchDataKey);
-            console.log('data', _data);
+            var _data = record.fields[userSettings.lang]; // console.log('sketchDataKey', sketchDataKey);
+            // console.log('data', data);
+
             DataSupplier.supplyDataAtIndex(sketchDataKey, _data, index);
           }
         });
@@ -828,28 +913,72 @@ function onSupplyData(context) {
   });
 }
 
-function createSettingsModal() {
-  var modal = NSAlert.alloc().init(),
-      modalIconPath = context.plugin.urlForResourceNamed('icon.png').path(),
-      modalIcon = NSImage.alloc().initByReferencingFile(modalIconPath),
-      modalContent = NSView.alloc().init();
-  modal.setIcon(modalIcon);
-  modal.setMessageText('Airtable');
-  modal.setInformativeText('lorem'); // const select = createSelect(items, selectedItemIndex, frame);
-  // modalContent.addSubview(select);
+function getUserSettings(defaultSettings) {
+  var alert = NSAlert.alloc().init(),
+      alertIconPath = context.plugin.urlForResourceNamed('icon.png').path(),
+      alertIcon = NSImage.alloc().initByReferencingFile(alertIconPath),
+      alertContent = NSView.alloc().init();
+  alert.setIcon(alertIcon);
+  alert.setMessageText('Airtable');
+  alert.setInformativeText('lorem');
+  alertContent.setFlipped(true); // UI Settings
 
-  modal.accessoryView = modalContent; // Display modal
+  var labelWidth = 100;
+  var labelHeight = 24;
+  var fieldWidth = 150;
+  var fieldHeight = 28;
+  var fieldSpacing = 20;
+  var offsetY = 0; // API Key
 
-  modal.runModal();
-} // function createSelect(items, selectedItemIndex, frame) {
-// 	const comboBox = NSComboBox.alloc().initWithFrame(frame),
-// 		selectedItemIndex = (selectedItemIndex > -1) ? selectedItemIndex : 0;
-// 	comboBox.addItemsWithObjectValues(items);
-// 	comboBox.selectItemAtIndex(selectedItemIndex);
-// 	comboBox.setNumberOfVisibleItems(16);
-// 	comboBox.setCompletes(1);
-// 	return comboBox;
-// }
+  var APIKeyLabel = createBoldLabel('API Key', 12, NSMakeRect(0, offsetY, fieldWidth, labelHeight));
+  alertContent.addSubview(APIKeyLabel);
+  var APIKeyField = createField(defaultSettings.APIKey, NSMakeRect(labelWidth, offsetY, fieldWidth, fieldHeight));
+  alertContent.addSubview(APIKeyField);
+  offsetY = CGRectGetMaxY(alertContent.subviews().lastObject().frame()) + fieldSpacing; // Select base (Project)
+
+  var baseLabel = createBoldLabel('Base', 12, NSMakeRect(0, offsetY, fieldWidth, labelHeight));
+  alertContent.addSubview(baseLabel);
+  var baseSelect = createSelect(baseNames, 0, NSMakeRect(labelWidth, offsetY, fieldWidth, fieldHeight));
+  alertContent.addSubview(baseSelect);
+  offsetY = CGRectGetMaxY(alertContent.subviews().lastObject().frame()) + fieldSpacing; // Language
+
+  var langLabel = createBoldLabel('Language', 12, NSMakeRect(0, offsetY, fieldWidth, labelHeight));
+  alertContent.addSubview(langLabel);
+  var langSelect = createSelect(langs, 0, NSMakeRect(labelWidth, offsetY, fieldWidth, fieldHeight));
+  alertContent.addSubview(langSelect);
+  offsetY = CGRectGetMaxY(alertContent.subviews().lastObject().frame()) + fieldSpacing; // Max records
+
+  var maxRecordsLabel = createBoldLabel('Max records', 12, NSMakeRect(0, offsetY, fieldWidth, labelHeight));
+  alertContent.addSubview(maxRecordsLabel);
+  var maxRecordsField = createField(defaultSettings.maxRecords, NSMakeRect(labelWidth, offsetY, fieldWidth, fieldHeight));
+  alertContent.addSubview(maxRecordsField);
+  alertContent.frame = NSMakeRect(0, 20, 300, CGRectGetMaxY(alertContent.subviews().lastObject().frame()));
+  alert.accessoryView = alertContent; // Buttons
+  // const buttonOk = alert.addButtonWithTitle('OK');
+  // const buttonCancel = alert.addButtonWithTitle('Cancel');
+  // setKeyOrder(alert, [
+  // 	baseLabel,
+  // 	baseSelect,
+  // 	langLabel,
+  // 	langSelect,
+  // 	buttonOk,
+  // ]);
+
+  alert.runModal(); // Display alert
+  // var responseCode = alert.runModal();
+  // log('responseCode', responseCode);
+  // if (responseCode === 1000) {
+
+  return {
+    APIKey: APIKeyField.stringValue(),
+    base: bases[baseNames[baseSelect.indexOfSelectedItem()]],
+    view: view,
+    maxRecords: maxRecordsField.stringValue(),
+    lang: langs[langSelect.indexOfSelectedItem()]
+  }; // } else {
+  // 	return false;
+  // }
+}
 
 /***/ }),
 
@@ -862,7 +991,11 @@ function createSettingsModal() {
 
 module.exports = {
   APIKey: 'keyf4awab19Xtmlye',
-  base: 'appvF01ICAgG9SQ7w',
+  bases: {
+    archiklip: 'appah63sWZZp4m8Na',
+    kubity: 'appspzJrn3jpBxBt1',
+    rvt2skp: 'appvF01ICAgG9SQ7w'
+  },
   table: 'YOUR-TABLE-NAME',
   view: 'Grid view'
 };

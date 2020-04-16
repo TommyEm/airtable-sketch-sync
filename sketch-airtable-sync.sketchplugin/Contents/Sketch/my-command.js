@@ -875,7 +875,7 @@ function onSupplyData(context) {
       }).then(function (data) {
         data.records.reverse().map(function (record, index) {
           // let { contentID, 'Copy Content': copy } = record.fields;
-          if (record.fields.Key === layerName) {
+          if (record.fields.Name === layerName) {
             // const airtableDataKey = record.fields.Key;
             var _data = record.fields[userSettings.lang]; // console.log('sketchDataKey', sketchDataKey);
             // console.log('data', data);

@@ -85,7 +85,7 @@ export function onSupplyData(context) {
 				.then((data) => {
 					data.records.reverse().map((record, index) => {
 						// let { contentID, 'Copy Content': copy } = record.fields;
-						if (record.fields.Key === layerName) {
+						if (record.fields.Name === layerName) {
 							// const airtableDataKey = record.fields.Key;
 							const data = record.fields[userSettings.lang];
 

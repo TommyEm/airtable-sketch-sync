@@ -712,35 +712,111 @@ module.exports = fetch;
 
 /***/ }),
 
-/***/ "./src/lib/ui.js":
-/*!***********************!*\
-  !*** ./src/lib/ui.js ***!
-  \***********************/
-/*! exports provided: setKeyOrder, createBoldLabel, createField, createSelect */
+/***/ "./src/lib/alert.js":
+/*!**************************!*\
+  !*** ./src/lib/alert.js ***!
+  \**************************/
+/*! exports provided: getUserSettings */
 /***/ (function(module, __webpack_exports__, __webpack_require__) {
 
 "use strict";
 __webpack_require__.r(__webpack_exports__);
-/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "setKeyOrder", function() { return setKeyOrder; });
+/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "getUserSettings", function() { return getUserSettings; });
+var _require = __webpack_require__(/*! ../secret */ "./src/secret.js"),
+    bases = _require.bases,
+    view = _require.view;
+
+var _require2 = __webpack_require__(/*! ./ui */ "./src/lib/ui.js"),
+    createBoldLabel = _require2.createBoldLabel,
+    createField = _require2.createField,
+    createSelect = _require2.createSelect;
+/**
+ * Create alert modal with options
+ * @param {object} defaultSettings 
+ * @param {array} baseNames 
+ */
+
+
+function getUserSettings(defaultSettings, baseNames, langs) {
+  var alert = NSAlert.alloc().init(),
+      alertIconPath = context.plugin.urlForResourceNamed('icon.png').path(),
+      alertIcon = NSImage.alloc().initByReferencingFile(alertIconPath),
+      alertContent = NSView.alloc().init();
+  alert.setIcon(alertIcon);
+  alert.setMessageText('Airtable');
+  alert.setInformativeText('lorem');
+  alertContent.setFlipped(true); // UI Settings
+
+  var labelWidth = 100;
+  var labelHeight = 24;
+  var fieldWidth = 150;
+  var fieldHeight = 28;
+  var fieldSpacing = 20;
+  var offsetY = 0; // API Key
+
+  var APIKeyLabel = createBoldLabel('API Key', 12, NSMakeRect(0, offsetY, fieldWidth, labelHeight));
+  alertContent.addSubview(APIKeyLabel);
+  var APIKeyField = createField(defaultSettings.APIKey, NSMakeRect(labelWidth, offsetY, fieldWidth, fieldHeight));
+  alertContent.addSubview(APIKeyField);
+  offsetY = CGRectGetMaxY(alertContent.subviews().lastObject().frame()) + fieldSpacing; // Select base (Project)
+
+  var baseLabel = createBoldLabel('Base', 12, NSMakeRect(0, offsetY, fieldWidth, labelHeight));
+  alertContent.addSubview(baseLabel);
+  var baseSelect = createSelect(baseNames, 0, NSMakeRect(labelWidth, offsetY, fieldWidth, fieldHeight));
+  alertContent.addSubview(baseSelect);
+  offsetY = CGRectGetMaxY(alertContent.subviews().lastObject().frame()) + fieldSpacing; // Language
+
+  var langLabel = createBoldLabel('Language', 12, NSMakeRect(0, offsetY, fieldWidth, labelHeight));
+  alertContent.addSubview(langLabel);
+  var langSelect = createSelect(langs, 0, NSMakeRect(labelWidth, offsetY, fieldWidth, fieldHeight));
+  alertContent.addSubview(langSelect);
+  offsetY = CGRectGetMaxY(alertContent.subviews().lastObject().frame()) + fieldSpacing; // Max records
+
+  var maxRecordsLabel = createBoldLabel('Max records', 12, NSMakeRect(0, offsetY, fieldWidth, labelHeight));
+  alertContent.addSubview(maxRecordsLabel);
+  var maxRecordsField = createField(defaultSettings.maxRecords, NSMakeRect(labelWidth, offsetY, fieldWidth, fieldHeight));
+  alertContent.addSubview(maxRecordsField);
+  alertContent.frame = NSMakeRect(0, 20, 300, CGRectGetMaxY(alertContent.subviews().lastObject().frame()));
+  alert.accessoryView = alertContent; // Buttons
+
+  var buttonOk = alert.addButtonWithTitle('OK');
+  var buttonCancel = alert.addButtonWithTitle('Cancel'); // Display alert
+
+  var responseCode = alert.runModal();
+
+  if (responseCode === 1000) {
+    return {
+      APIKey: APIKeyField.stringValue(),
+      base: bases[baseNames[baseSelect.indexOfSelectedItem()]],
+      view: view,
+      maxRecords: maxRecordsField.stringValue(),
+      lang: langs[langSelect.indexOfSelectedItem()]
+    };
+  } else {
+    return false;
+  }
+}
+
+/***/ }),
+
+/***/ "./src/lib/ui.js":
+/*!***********************!*\
+  !*** ./src/lib/ui.js ***!
+  \***********************/
+/*! exports provided: createBoldLabel, createField, createSelect */
+/***/ (function(module, __webpack_exports__, __webpack_require__) {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
 /* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "createBoldLabel", function() { return createBoldLabel; });
 /* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "createField", function() { return createField; });
 /* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "createSelect", function() { return createSelect; });
-function setKeyOrder(alert, order) {
-  for (var i = 0; i < order.length; i++) {
-    var thisItem = order[i],
-        nextItem = order[i + 1];
-    if (nextItem) thisItem.setNextKeyView(nextItem);
-  }
-
-  alert.window().setInitialFirstResponder(order[0]);
-}
 /**
  * Create a label with bold style
  * @param {string} text 
  * @param {number} size 
  * @param {object} frame 
  */
-
 function createBoldLabel(text, size, frame) {
   var label = NSTextField.alloc().initWithFrame(frame);
   label.setStringValue(text);
@@ -808,14 +884,10 @@ var _require = __webpack_require__(/*! ./secret */ "./src/secret.js"),
     table = _require.table,
     view = _require.view;
 
-var _require2 = __webpack_require__(/*! ./lib/ui */ "./src/lib/ui.js"),
-    createBoldLabel = _require2.createBoldLabel,
-    createField = _require2.createField,
-    createSelect = _require2.createSelect,
-    setKeyOrder = _require2.setKeyOrder;
+var _require2 = __webpack_require__(/*! ./lib/alert */ "./src/lib/alert.js"),
+    getUserSettings = _require2.getUserSettings;
 
-var document = __webpack_require__(/*! sketch/dom */ "sketch/dom").getSelectedDocument(); // const base = new Airtable({ apiKey: 'keyf4awab19Xtmlye' }).base('appvF01ICAgG9SQ7w');
-
+var document = __webpack_require__(/*! sketch/dom */ "sketch/dom").getSelectedDocument();
 
 var baseNames = Object.keys(bases).map(function (base) {
   return base;
@@ -839,7 +911,7 @@ function onSupplyData(context) {
   var sketchDataKey = context.data.key;
   var items = util.toArray(context.data.items).map(sketch.fromNative); // Create UI
 
-  var userSettings = getUserSettings(defaultSettings);
+  var userSettings = getUserSettings(defaultSettings, baseNames, langs);
   log(userSettings); // We iterate on each target for data
 
   items.forEach(function (item, index) {
@@ -874,9 +946,7 @@ function onSupplyData(context) {
         return res.json();
       }).then(function (data) {
         data.records.reverse().map(function (record, index) {
-          // let { contentID, 'Copy Content': copy } = record.fields;
           if (record.fields.Name === layerName) {
-            // const airtableDataKey = record.fields.Key;
             var _data = record.fields[userSettings.lang]; // console.log('sketchDataKey', sketchDataKey);
             // console.log('data', data);
 
@@ -894,83 +964,9 @@ function onSupplyData(context) {
         }
 
         console.log(error.config);
-      }); // base(artboardName)
-      // 	.select({
-      // 		maxRecords: 3,
-      // 		view: 'Grid view',
-      // 	}).eachPage(function page(records, fetchNextPage) {
-      // 		records.forEach(function(record) {
-      // 			console.log('Retrieved', record.get('Title'));
-      // 		});
-      // 		fetchNextPage();
-      // 	}, function done(err) {
-      // 		if (err) { console.error(err); return; }
-      // 	});
-      // console.log(base('Success').find('rec1l5DNXef6v3Oq4'));
-    } // let data = Math.random().toString();
-    // DataSupplier.supplyDataAtIndex(sketchDataKey, data, index);
-
+      });
+    }
   });
-}
-
-function getUserSettings(defaultSettings) {
-  var alert = NSAlert.alloc().init(),
-      alertIconPath = context.plugin.urlForResourceNamed('icon.png').path(),
-      alertIcon = NSImage.alloc().initByReferencingFile(alertIconPath),
-      alertContent = NSView.alloc().init();
-  alert.setIcon(alertIcon);
-  alert.setMessageText('Airtable');
-  alert.setInformativeText('lorem');
-  alertContent.setFlipped(true); // UI Settings
-
-  var labelWidth = 100;
-  var labelHeight = 24;
-  var fieldWidth = 150;
-  var fieldHeight = 28;
-  var fieldSpacing = 20;
-  var offsetY = 0; // API Key
-
-  var APIKeyLabel = createBoldLabel('API Key', 12, NSMakeRect(0, offsetY, fieldWidth, labelHeight));
-  alertContent.addSubview(APIKeyLabel);
-  var APIKeyField = createField(defaultSettings.APIKey, NSMakeRect(labelWidth, offsetY, fieldWidth, fieldHeight));
-  alertContent.addSubview(APIKeyField);
-  offsetY = CGRectGetMaxY(alertContent.subviews().lastObject().frame()) + fieldSpacing; // Select base (Project)
-
-  var baseLabel = createBoldLabel('Base', 12, NSMakeRect(0, offsetY, fieldWidth, labelHeight));
-  alertContent.addSubview(baseLabel);
-  var baseSelect = createSelect(baseNames, 0, NSMakeRect(labelWidth, offsetY, fieldWidth, fieldHeight));
-  alertContent.addSubview(baseSelect);
-  offsetY = CGRectGetMaxY(alertContent.subviews().lastObject().frame()) + fieldSpacing; // Language
-
-  var langLabel = createBoldLabel('Language', 12, NSMakeRect(0, offsetY, fieldWidth, labelHeight));
-  alertContent.addSubview(langLabel);
-  var langSelect = createSelect(langs, 0, NSMakeRect(labelWidth, offsetY, fieldWidth, fieldHeight));
-  alertContent.addSubview(langSelect);
-  offsetY = CGRectGetMaxY(alertContent.subviews().lastObject().frame()) + fieldSpacing; // Max records
-
-  var maxRecordsLabel = createBoldLabel('Max records', 12, NSMakeRect(0, offsetY, fieldWidth, labelHeight));
-  alertContent.addSubview(maxRecordsLabel);
-  var maxRecordsField = createField(defaultSettings.maxRecords, NSMakeRect(labelWidth, offsetY, fieldWidth, fieldHeight));
-  alertContent.addSubview(maxRecordsField);
-  alertContent.frame = NSMakeRect(0, 20, 300, CGRectGetMaxY(alertContent.subviews().lastObject().frame()));
-  alert.accessoryView = alertContent; // Buttons
-
-  var buttonOk = alert.addButtonWithTitle('OK');
-  var buttonCancel = alert.addButtonWithTitle('Cancel'); // Display alert
-
-  var responseCode = alert.runModal();
-
-  if (responseCode === 1000) {
-    return {
-      APIKey: APIKeyField.stringValue(),
-      base: bases[baseNames[baseSelect.indexOfSelectedItem()]],
-      view: view,
-      maxRecords: maxRecordsField.stringValue(),
-      lang: langs[langSelect.indexOfSelectedItem()]
-    };
-  } else {
-    return false;
-  }
 }
 
 /***/ }),

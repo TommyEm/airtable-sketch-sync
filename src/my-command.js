@@ -231,25 +231,14 @@ function getUserSettings(defaultSettings) {
 
 
 	// Buttons
-	// const buttonOk = alert.addButtonWithTitle('OK');
-	// const buttonCancel = alert.addButtonWithTitle('Cancel');
-
-
-	// setKeyOrder(alert, [
-	// 	baseLabel,
-	// 	baseSelect,
-	// 	langLabel,
-	// 	langSelect,
-	// 	buttonOk,
-	// ]);
-
-	alert.runModal();
+	const buttonOk = alert.addButtonWithTitle('OK');
+	const buttonCancel = alert.addButtonWithTitle('Cancel');
+	
 
 	// Display alert
-	// var responseCode = alert.runModal();
-	// log('responseCode', responseCode);
+	var responseCode = alert.runModal();
 
-	// if (responseCode === 1000) {
+	if (responseCode === 1000) {
 		return {
 			APIKey: APIKeyField.stringValue(),
 			base: bases[baseNames[baseSelect.indexOfSelectedItem()]],
@@ -258,7 +247,7 @@ function getUserSettings(defaultSettings) {
 			lang: langs[langSelect.indexOfSelectedItem()],
 		}
 
-	// } else {
-	// 	return false;
-	// }
+	} else {
+		return false;
+	}
 }

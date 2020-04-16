@@ -954,30 +954,23 @@ function getUserSettings(defaultSettings) {
   alertContent.addSubview(maxRecordsField);
   alertContent.frame = NSMakeRect(0, 20, 300, CGRectGetMaxY(alertContent.subviews().lastObject().frame()));
   alert.accessoryView = alertContent; // Buttons
-  // const buttonOk = alert.addButtonWithTitle('OK');
-  // const buttonCancel = alert.addButtonWithTitle('Cancel');
-  // setKeyOrder(alert, [
-  // 	baseLabel,
-  // 	baseSelect,
-  // 	langLabel,
-  // 	langSelect,
-  // 	buttonOk,
-  // ]);
 
-  alert.runModal(); // Display alert
-  // var responseCode = alert.runModal();
-  // log('responseCode', responseCode);
-  // if (responseCode === 1000) {
+  var buttonOk = alert.addButtonWithTitle('OK');
+  var buttonCancel = alert.addButtonWithTitle('Cancel'); // Display alert
 
-  return {
-    APIKey: APIKeyField.stringValue(),
-    base: bases[baseNames[baseSelect.indexOfSelectedItem()]],
-    view: view,
-    maxRecords: maxRecordsField.stringValue(),
-    lang: langs[langSelect.indexOfSelectedItem()]
-  }; // } else {
-  // 	return false;
-  // }
+  var responseCode = alert.runModal();
+
+  if (responseCode === 1000) {
+    return {
+      APIKey: APIKeyField.stringValue(),
+      base: bases[baseNames[baseSelect.indexOfSelectedItem()]],
+      view: view,
+      maxRecords: maxRecordsField.stringValue(),
+      lang: langs[langSelect.indexOfSelectedItem()]
+    };
+  } else {
+    return false;
+  }
 }
 
 /***/ }),

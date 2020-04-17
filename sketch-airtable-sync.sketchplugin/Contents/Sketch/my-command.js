@@ -745,7 +745,10 @@ function getUserSettings(defaultSettings, baseNames, langs) {
       alertContent = NSView.alloc().init();
   alert.setIcon(alertIcon);
   alert.setMessageText('Airtable');
-  alert.setInformativeText('lorem');
+  alert.setInformativeText('lorem'); // Buttons
+
+  alert.addButtonWithTitle('OK');
+  alert.addButtonWithTitle('Cancel');
   alertContent.setFlipped(true); // UI Settings
 
   var labelWidth = 100;
@@ -784,25 +787,24 @@ function getUserSettings(defaultSettings, baseNames, langs) {
   var maxRecordsField = createField(defaultSettings.maxRecords, NSMakeRect(labelWidth, offsetY, fieldWidth, fieldHeight));
   alertContent.addSubview(maxRecordsField);
   alertContent.frame = NSMakeRect(0, 20, 300, CGRectGetMaxY(alertContent.subviews().lastObject().frame()));
-  alert.accessoryView = alertContent; // Buttons
-
-  var buttonOk = alert.addButtonWithTitle('OK');
-  var buttonCancel = alert.addButtonWithTitle('Cancel'); // Display alert
+  alert.accessoryView = alertContent; // Display alert
 
   var responseCode = alert.runModal();
 
-  if (responseCode === 1000) {
-    var pluginOptions = {
-      APIKey: APIKeyField.stringValue(),
-      base: baseSelect.stringValue(),
-      view: viewSelect.stringValue(),
-      maxRecords: maxRecordsField.stringValue(),
-      lang: langSelect.stringValue()
-    };
-    Settings.setSettingForKey('sketchAirtableSync', pluginOptions);
-    return pluginOptions;
-  } else {
-    return false;
+  if (responseCode == NSAlertFirstButtonReturn) {
+    if (responseCode === 1000) {
+      var pluginOptions = {
+        APIKey: APIKeyField.stringValue(),
+        base: baseSelect.stringValue(),
+        view: viewSelect.stringValue(),
+        maxRecords: maxRecordsField.stringValue(),
+        lang: langSelect.stringValue()
+      };
+      Settings.setSettingForKey('sketchAirtableSync', pluginOptions);
+      return pluginOptions;
+    } else {
+      return false;
+    }
   }
 }
 
@@ -885,8 +887,7 @@ var DataSupplier = sketch.DataSupplier,
 
 var util = __webpack_require__(/*! util */ "util");
 
-var fetch = __webpack_require__(/*! sketch-polyfill-fetch */ "./node_modules/sketch-polyfill-fetch/lib/index.js"); // const Airtable = require('airtable');
-
+var fetch = __webpack_require__(/*! sketch-polyfill-fetch */ "./node_modules/sketch-polyfill-fetch/lib/index.js");
 
 var _require = __webpack_require__(/*! ./secret */ "./src/secret.js"),
     bases = _require.bases;
@@ -928,63 +929,69 @@ function onShutdown() {
 }
 function onSupplyData(context) {
   var sketchDataKey = context.data.key;
-  var items = util.toArray(context.data.items).map(sketch.fromNative); // Create UI
+  var items = util.toArray(context.data.items).map(sketch.fromNative); // Get user options from modal
 
-  var userSettings = getUserSettings(defaultSettings, baseNames, langs); // We iterate on each target for data
+  var userSettings = getUserSettings(defaultSettings, baseNames, langs);
 
-  items.forEach(function (item, index) {
-    var layerName;
+  if (userSettings) {
+    // We iterate on each target for data
+    items.forEach(function (item, index) {
+      var layerName;
 
-    if (item.type === 'DataOverride') {
-      layerName = item.override.affectedLayer.name;
-    } else if (item.type === 'Text') {
-      layerName = item.name;
-    }
+      if (item.type === 'DataOverride') {
+        layerName = item.override.affectedLayer.name;
+      } else if (item.type === 'Text') {
+        layerName = item.name;
+      }
 
-    var layer;
+      var layer;
 
-    switch (item.type) {
-      case 'DataOverride':
-        layer = document.getLayerWithID(item.symbolInstance.id);
-        break;
+      switch (item.type) {
+        case 'DataOverride':
+          layer = document.getLayerWithID(item.symbolInstance.id);
+          break;
 
-      case 'Text':
-        layer = document.getLayerWithID(item.id);
-        break;
+        case 'Text':
+          layer = document.getLayerWithID(item.id);
+          break;
 
-      default:
-        break;
-    }
+        default:
+          break;
+      }
 
-    if (layer.getParentArtboard()) {
-      var currentTable = layer.getParentArtboard().name;
-      var currentBase = bases[userSettings.base];
-      var apiEndpoint = encodeURI("https://api.airtable.com/v0/".concat(currentBase, "/").concat(currentTable, "?maxRecords=").concat(userSettings.maxRecords, "&view=").concat(userSettings.view, "&api_key=").concat(userSettings.APIKey));
-      fetch(apiEndpoint).then(function (res) {
-        return res.json();
-      }).then(function (data) {
-        data.records.reverse().map(function (record, index) {
-          if (record.fields.Name === layerName) {
-            var _data = record.fields[userSettings.lang]; // console.log('sketchDataKey', sketchDataKey);
-            // console.log('data', data);
+      if (layer.getParentArtboard()) {
+        var currentTable = layer.getParentArtboard().name;
+        var currentBase = bases[userSettings.base];
+        var apiEndpoint = encodeURI("https://api.airtable.com/v0/".concat(currentBase, "/").concat(currentTable, "?maxRecords=").concat(userSettings.maxRecords, "&view=").concat(userSettings.view, "&api_key=").concat(userSettings.APIKey));
+        fetch(apiEndpoint).then(function (res) {
+          return res.json();
+        }).then(function (data) {
+          data.records.reverse().map(function (record, index) {
+            if (record.fields.Name === layerName) {
+              var currentCellData = record.fields[userSettings.lang];
 
-            DataSupplier.supplyDataAtIndex(sketchDataKey, _data, index);
+              var _data = currentCellData ? currentCellData : ' '; // console.log('sketchDataKey', sketchDataKey);
+              // console.log('data', data);
+
+
+              DataSupplier.supplyDataAtIndex(sketchDataKey, _data, index);
+            }
+          });
+        }).catch(function (error) {
+          if (error.response) {
+            console.log(error.response.data);
+          } else if (error.request) {
+            console.log(error.request);
+          } else {
+            // Something happened in setting up the request that triggered an Error
+            console.log('Error', error.message);
           }
-        });
-      }).catch(function (error) {
-        if (error.response) {
-          console.log(error.response.data);
-        } else if (error.request) {
-          console.log(error.request);
-        } else {
-          // Something happened in setting up the request that triggered an Error
-          console.log('Error', error.message);
-        }
 
-        console.log(error.config);
-      });
-    }
-  });
+          console.log(error.config);
+        });
+      }
+    });
+  }
 }
 
 /***/ }),

@@ -23,6 +23,9 @@ export function getUserSettings(defaultSettings, baseNames, langs) {
 	alert.setIcon(alertIcon);
 	alert.setMessageText('Airtable');
 	alert.setInformativeText('lorem');
+	// Buttons
+	alert.addButtonWithTitle('OK');
+	alert.addButtonWithTitle('Cancel');
 
 	alertContent.setFlipped(true);
 
@@ -124,28 +127,26 @@ export function getUserSettings(defaultSettings, baseNames, langs) {
 	alert.accessoryView = alertContent;
 
 
-	// Buttons
-	const buttonOk = alert.addButtonWithTitle('OK');
-	const buttonCancel = alert.addButtonWithTitle('Cancel');
 	
-
 	// Display alert
 	var responseCode = alert.runModal();
-
-	if (responseCode === 1000) {
-		const pluginOptions = {
-			APIKey: APIKeyField.stringValue(),
-			base: baseSelect.stringValue(),
-			view: viewSelect.stringValue(),
-			maxRecords: maxRecordsField.stringValue(),
-			lang: langSelect.stringValue(),
-		};
-
-		Settings.setSettingForKey('sketchAirtableSync', pluginOptions);
-
-		return pluginOptions;
-
-	} else {
-		return false;
+	if (responseCode == NSAlertFirstButtonReturn) {
+		if (responseCode === 1000) {
+			const pluginOptions = {
+				APIKey: APIKeyField.stringValue(),
+				base: baseSelect.stringValue(),
+				view: viewSelect.stringValue(),
+				maxRecords: maxRecordsField.stringValue(),
+				lang: langSelect.stringValue(),
+			};
+	
+			Settings.setSettingForKey('sketchAirtableSync', pluginOptions);
+	
+			return pluginOptions;
+	
+		} else {
+			return false;
+		}
 	}
+
 }

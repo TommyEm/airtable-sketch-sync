@@ -2,7 +2,6 @@ const sketch = require('sketch');
 const { DataSupplier, Settings } = sketch;
 const util = require('util');
 const fetch = require("sketch-polyfill-fetch");
-// const Airtable = require('airtable');
 const { bases } = require('./secret');
 const { getUserSettings } = require('./lib/alert');
 
@@ -52,67 +51,73 @@ export function onSupplyData(context) {
 	const items = util.toArray(context.data.items).map(sketch.fromNative);
 
 
-	// Create UI
+	// Get user options from modal
 	const userSettings = getUserSettings(defaultSettings, baseNames, langs);
 
 
-	// We iterate on each target for data
-	items.forEach((item, index) => {
-		let layerName;
-		if (item.type === 'DataOverride') {
-			layerName = item.override.affectedLayer.name;
-
-		} else if (item.type === 'Text') {
-			layerName = item.name;
-		}
-
-
-		let layer;
-		switch (item.type) {
-			case 'DataOverride':
-				layer = document.getLayerWithID(item.symbolInstance.id);
-				break;
-
-			case 'Text':
-				layer = document.getLayerWithID(item.id);
-				break;
-
-			default:
-				break;
-		}
-
-		if (layer.getParentArtboard()) {
+	if (userSettings) {
 		
-			const currentTable = layer.getParentArtboard().name;
-			const currentBase = bases[userSettings.base];
-
-			const apiEndpoint = encodeURI(`https://api.airtable.com/v0/${currentBase}/${currentTable}?maxRecords=${userSettings.maxRecords}&view=${userSettings.view}&api_key=${userSettings.APIKey}`);
-
-			fetch(apiEndpoint)
-				.then((res) => res.json())
-				.then((data) => {
-					data.records.reverse().map((record, index) => {
-						if (record.fields.Name === layerName) {
-							const data = record.fields[userSettings.lang];
-
-							// console.log('sketchDataKey', sketchDataKey);
-							// console.log('data', data);
-							
-							DataSupplier.supplyDataAtIndex(sketchDataKey, data, index);
-						}
+		// We iterate on each target for data
+		items.forEach((item, index) => {
+			let layerName;
+			if (item.type === 'DataOverride') {
+				layerName = item.override.affectedLayer.name;
+				
+			} else if (item.type === 'Text') {
+				layerName = item.name;
+			}
+	
+	
+			let layer;
+			switch (item.type) {
+				case 'DataOverride':
+					layer = document.getLayerWithID(item.symbolInstance.id);
+					break;
+	
+				case 'Text':
+					layer = document.getLayerWithID(item.id);
+					break;
+	
+				default:
+					break;
+			}
+	
+			if (layer.getParentArtboard()) {
+			
+				const currentTable = layer.getParentArtboard().name;
+				const currentBase = bases[userSettings.base];
+	
+				const apiEndpoint = encodeURI(`https://api.airtable.com/v0/${currentBase}/${currentTable}?maxRecords=${userSettings.maxRecords}&view=${userSettings.view}&api_key=${userSettings.APIKey}`);
+	
+				fetch(apiEndpoint)
+					.then((res) => res.json())
+					.then((data) => {
+						data.records.reverse().map((record, index) => {
+							if (record.fields.Name === layerName) {
+								const currentCellData = record.fields[userSettings.lang];
+								const data = currentCellData ? currentCellData : ' ';
+	
+								// console.log('sketchDataKey', sketchDataKey);
+								// console.log('data', data);
+								
+								DataSupplier.supplyDataAtIndex(sketchDataKey, data, index);
+							}
+						})
 					})
-				})
-				.catch((error) => {
-					if (error.response) {
-						console.log(error.response.data);
-					} else if (error.request) {
-						console.log(error.request);
-					} else {
-						// Something happened in setting up the request that triggered an Error
-						console.log('Error', error.message);
-					}
-					console.log(error.config);
-				});
-		}
-	})
+					.catch((error) => {
+						if (error.response) {
+							console.log(error.response.data);
+						} else if (error.request) {
+							console.log(error.request);
+						} else {
+							// Something happened in setting up the request that triggered an Error
+							console.log('Error', error.message);
+						}
+						console.log(error.config);
+					});
+			}
+		});
+	}
+
+
 }

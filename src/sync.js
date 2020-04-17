@@ -3,7 +3,8 @@ const { DataSupplier, Settings } = sketch;
 const util = require('util');
 const fetch = require("sketch-polyfill-fetch");
 const { bases } = require('./secret');
-const { getUserSettings } = require('./lib/alert');
+const { getUserOptions } = require('./lib/alert');
+const { pluginSettings } = require('./settings');
 
 const document = require('sketch/dom').getSelectedDocument();
 
@@ -16,22 +17,20 @@ const langs = [
 const views = ['Grid view'];
 
 // Setting variables
-let defaultSettings = {};
+let defaultOptions = {};
 const pluginOptions = Settings.settingForKey('sketchAirtableSync');
 
 if (pluginOptions) {
-	defaultSettings.APIKey = pluginOptions.APIKey;
-	defaultSettings.base = pluginOptions.base;
-	defaultSettings.maxRecords = pluginOptions.maxRecords;
-	defaultSettings.view = pluginOptions.view;
-	defaultSettings.lang = pluginOptions.lang;
+	defaultOptions.base = pluginOptions.base;
+	defaultOptions.maxRecords = pluginOptions.maxRecords;
+	defaultOptions.view = pluginOptions.view;
+	defaultOptions.lang = pluginOptions.lang;
 	
 } else {
-	defaultSettings.APIKey = '';
-	defaultSettings.base = baseNames[0];
-	defaultSettings.maxRecords = 15;
-	defaultSettings.view = views[0];
-	defaultSettings.lang = langs[0];
+	defaultOptions.base = baseNames[0];
+	defaultOptions.maxRecords = 15;
+	defaultOptions.view = views[0];
+	defaultOptions.lang = langs[0];
 }
 
 
@@ -52,10 +51,10 @@ export function onSupplyData(context) {
 
 
 	// Get user options from modal
-	const userSettings = getUserSettings(defaultSettings, baseNames, langs);
+	const userOptions = getUserOptions(defaultOptions, baseNames, langs);
 
 
-	if (userSettings) {
+	if (userOptions) {
 		
 		// We iterate on each target for data
 		items.forEach((item, index) => {
@@ -85,16 +84,16 @@ export function onSupplyData(context) {
 			if (layer.getParentArtboard()) {
 			
 				const currentTable = layer.getParentArtboard().name;
-				const currentBase = bases[userSettings.base];
+				const currentBase = bases[userOptions.base];
 	
-				const apiEndpoint = encodeURI(`https://api.airtable.com/v0/${currentBase}/${currentTable}?maxRecords=${userSettings.maxRecords}&view=${userSettings.view}&api_key=${userSettings.APIKey}`);
+				const apiEndpoint = encodeURI(`https://api.airtable.com/v0/${currentBase}/${currentTable}?maxRecords=${userOptions.maxRecords}&view=${userOptions.view}&api_key=${pluginSettings.APIKey}`);
 	
 				fetch(apiEndpoint)
 					.then((res) => res.json())
 					.then((data) => {
 						data.records.reverse().map((record, index) => {
 							if (record.fields.Name === layerName) {
-								const currentCellData = record.fields[userSettings.lang];
+								const currentCellData = record.fields[userOptions.lang];
 								const data = currentCellData ? currentCellData : ' ';
 	
 								// console.log('sketchDataKey', sketchDataKey);

@@ -8,13 +8,21 @@ const {
 
 const views = ['Grid view'];
 
+// UI Settings
+const labelWidth = 100;
+const labelHeight = 24;
+const fieldWidth = 150;
+const fieldHeight = 28;
+const fieldSpacing = 20;
+
+
 
 /**
  * Create alert modal with options
- * @param {object} defaultSettings 
+ * @param {object} defaultOptions 
  * @param {array} baseNames 
  */
-export function getUserSettings(defaultSettings, baseNames, langs) {
+export function getUserOptions(defaultOptions, baseNames, langs) {
 	const alert = NSAlert.alloc().init(),
 		alertIconPath = context.plugin.urlForResourceNamed('icon.png').path(),
 		alertIcon = NSImage.alloc().initByReferencingFile(alertIconPath),
@@ -29,29 +37,8 @@ export function getUserSettings(defaultSettings, baseNames, langs) {
 
 	alertContent.setFlipped(true);
 
-
-	// UI Settings
-	const labelWidth = 100;
-	const labelHeight = 24;
-	const fieldWidth = 150;
-	const fieldHeight = 28;
-	const fieldSpacing = 20;
+	
 	let offsetY = 0;
-
-
-	// API Key
-	const APIKeyLabel = createBoldLabel(
-		'API Key',
-		12,
-		NSMakeRect(0, offsetY, fieldWidth, labelHeight));
-	alertContent.addSubview(APIKeyLabel);
-
-	const APIKeyField = createField(
-		defaultSettings.APIKey,
-		NSMakeRect(labelWidth, offsetY, fieldWidth, fieldHeight));
-	alertContent.addSubview(APIKeyField);
-
-	offsetY = CGRectGetMaxY(alertContent.subviews().lastObject().frame()) + fieldSpacing;
 
 
 	// Select base (Project)
@@ -64,7 +51,7 @@ export function getUserSettings(defaultSettings, baseNames, langs) {
 
 	const baseSelect = createSelect(
 		baseNames, 
-		baseNames.indexOf(defaultSettings.base), 
+		baseNames.indexOf(defaultOptions.base), 
 		NSMakeRect(labelWidth, offsetY, fieldWidth, fieldHeight)
 	);
 	alertContent.addSubview(baseSelect);
@@ -81,7 +68,7 @@ export function getUserSettings(defaultSettings, baseNames, langs) {
 
 	const langSelect = createSelect(
 		langs, 
-		langs.indexOf(defaultSettings.lang), 
+		langs.indexOf(defaultOptions.lang), 
 		NSMakeRect(labelWidth, offsetY, fieldWidth, fieldHeight));
 	alertContent.addSubview(langSelect);
 
@@ -97,7 +84,7 @@ export function getUserSettings(defaultSettings, baseNames, langs) {
 
 	const viewSelect = createSelect(
 		views,
-		views.indexOf(defaultSettings.view),
+		views.indexOf(defaultOptions.view),
 		NSMakeRect(labelWidth, offsetY, fieldWidth, fieldHeight));
 	alertContent.addSubview(viewSelect);
 
@@ -112,7 +99,7 @@ export function getUserSettings(defaultSettings, baseNames, langs) {
 	alertContent.addSubview(maxRecordsLabel);
 
 	const maxRecordsField = createField(
-		defaultSettings.maxRecords, 
+		defaultOptions.maxRecords, 
 		NSMakeRect(labelWidth, offsetY, fieldWidth, fieldHeight));
 	alertContent.addSubview(maxRecordsField);
 
@@ -133,7 +120,6 @@ export function getUserSettings(defaultSettings, baseNames, langs) {
 	if (responseCode == NSAlertFirstButtonReturn) {
 		if (responseCode === 1000) {
 			const pluginOptions = {
-				APIKey: APIKeyField.stringValue(),
 				base: baseSelect.stringValue(),
 				view: viewSelect.stringValue(),
 				maxRecords: maxRecordsField.stringValue(),
@@ -148,5 +134,70 @@ export function getUserSettings(defaultSettings, baseNames, langs) {
 			return false;
 		}
 	}
+}
 
+
+
+/**
+ * Plugin Settings (API Key)
+ * @param {object} defaultSettings 
+ */
+export function setPlugin(defaultSettings) {
+	const alert = NSAlert.alloc().init(),
+		alertIconPath = context.plugin.urlForResourceNamed('icon.png').path(),
+		alertIcon = NSImage.alloc().initByReferencingFile(alertIconPath),
+		alertContent = NSView.alloc().init();
+
+	alert.setIcon(alertIcon);
+	alert.setMessageText('Sketch Airtable Sync');
+	alert.setInformativeText('Settings');
+	// Buttons
+	alert.addButtonWithTitle('OK');
+	alert.addButtonWithTitle('Cancel');
+
+	alertContent.setFlipped(true);
+
+
+	let offsetY = 0;
+
+
+	// API Key
+	const APIKeyLabel = createBoldLabel(
+		'API Key',
+		12,
+		NSMakeRect(0, offsetY, fieldWidth, labelHeight));
+	alertContent.addSubview(APIKeyLabel);
+
+	const APIKeyField = createField(
+		defaultSettings.APIKey,
+		NSMakeRect(labelWidth, offsetY, fieldWidth, fieldHeight));
+	alertContent.addSubview(APIKeyField);
+
+
+
+	alertContent.frame = NSMakeRect(
+		0,
+		20,
+		300,
+		CGRectGetMaxY(alertContent.subviews().lastObject().frame())
+	);
+	alert.accessoryView = alertContent;
+
+
+	// Display alert
+	var responseCode = alert.runModal();
+	if (responseCode == NSAlertFirstButtonReturn) {
+		if (responseCode === 1000) {
+			const pluginSettings = {
+				APIKey: APIKeyField.stringValue(),
+			};
+
+			Settings.setSettingForKey('sketchAirtableSyncSettings', pluginSettings);
+
+			return pluginSettings;
+
+		} else {
+			return false;
+		}
+	}
 }

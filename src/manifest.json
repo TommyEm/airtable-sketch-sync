@@ -5,7 +5,7 @@
   "suppliesData": true,
   "commands": [
     {
-      "script": "my-command.js",
+      "script": "sync.js",
       "handlers": {
         "actions": {
           "Startup": "onStartup",
@@ -13,9 +13,23 @@
           "SupplyData": "onSupplyData"
         }
       }
+    },
+    {
+      "name": "📝 Sync with Airtable",
+      "identifier": "sketch-airtable-sync.sync-all-artboards-identifier",
+      "script": "sync-all-artboards.js"
+    },
+    {
+      "name": "⚙️ Settings",
+      "identifier": "sketch-airtable-sync.settings-identifier",
+      "script": "settings.js"
     }
   ],
   "menu": {
-    "title": "Sketch Airtable Sync"
+    "title": "Sketch Airtable Sync",
+    "items": [
+      "sketch-airtable-sync.settings-identifier",
+      "sketch-airtable-sync.sync-all-artboards-identifier"
+    ]
   }
 }

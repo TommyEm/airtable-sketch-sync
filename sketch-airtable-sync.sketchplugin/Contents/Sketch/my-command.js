@@ -722,20 +722,21 @@ module.exports = fetch;
 "use strict";
 __webpack_require__.r(__webpack_exports__);
 /* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "getUserSettings", function() { return getUserSettings; });
-var _require = __webpack_require__(/*! ../secret */ "./src/secret.js"),
-    bases = _require.bases,
-    view = _require.view;
+var sketch = __webpack_require__(/*! sketch */ "sketch");
 
-var _require2 = __webpack_require__(/*! ./ui */ "./src/lib/ui.js"),
-    createBoldLabel = _require2.createBoldLabel,
-    createField = _require2.createField,
-    createSelect = _require2.createSelect;
+var Settings = sketch.Settings;
+
+var _require = __webpack_require__(/*! ./ui */ "./src/lib/ui.js"),
+    createBoldLabel = _require.createBoldLabel,
+    createField = _require.createField,
+    createSelect = _require.createSelect;
+
+var views = ['Grid view'];
 /**
  * Create alert modal with options
  * @param {object} defaultSettings 
  * @param {array} baseNames 
  */
-
 
 function getUserSettings(defaultSettings, baseNames, langs) {
   var alert = NSAlert.alloc().init(),
@@ -762,14 +763,20 @@ function getUserSettings(defaultSettings, baseNames, langs) {
 
   var baseLabel = createBoldLabel('Base', 12, NSMakeRect(0, offsetY, fieldWidth, labelHeight));
   alertContent.addSubview(baseLabel);
-  var baseSelect = createSelect(baseNames, 0, NSMakeRect(labelWidth, offsetY, fieldWidth, fieldHeight));
+  var baseSelect = createSelect(baseNames, baseNames.indexOf(defaultSettings.base), NSMakeRect(labelWidth, offsetY, fieldWidth, fieldHeight));
   alertContent.addSubview(baseSelect);
   offsetY = CGRectGetMaxY(alertContent.subviews().lastObject().frame()) + fieldSpacing; // Language
 
   var langLabel = createBoldLabel('Language', 12, NSMakeRect(0, offsetY, fieldWidth, labelHeight));
   alertContent.addSubview(langLabel);
-  var langSelect = createSelect(langs, 0, NSMakeRect(labelWidth, offsetY, fieldWidth, fieldHeight));
+  var langSelect = createSelect(langs, langs.indexOf(defaultSettings.lang), NSMakeRect(labelWidth, offsetY, fieldWidth, fieldHeight));
   alertContent.addSubview(langSelect);
+  offsetY = CGRectGetMaxY(alertContent.subviews().lastObject().frame()) + fieldSpacing; // View
+
+  var viewLabel = createBoldLabel('View', 12, NSMakeRect(0, offsetY, fieldWidth, labelHeight));
+  alertContent.addSubview(viewLabel);
+  var viewSelect = createSelect(views, views.indexOf(defaultSettings.view), NSMakeRect(labelWidth, offsetY, fieldWidth, fieldHeight));
+  alertContent.addSubview(viewSelect);
   offsetY = CGRectGetMaxY(alertContent.subviews().lastObject().frame()) + fieldSpacing; // Max records
 
   var maxRecordsLabel = createBoldLabel('Max records', 12, NSMakeRect(0, offsetY, fieldWidth, labelHeight));
@@ -785,13 +792,15 @@ function getUserSettings(defaultSettings, baseNames, langs) {
   var responseCode = alert.runModal();
 
   if (responseCode === 1000) {
-    return {
+    var pluginOptions = {
       APIKey: APIKeyField.stringValue(),
-      base: bases[baseNames[baseSelect.indexOfSelectedItem()]],
-      view: view,
+      base: baseSelect.stringValue(),
+      view: viewSelect.stringValue(),
       maxRecords: maxRecordsField.stringValue(),
-      lang: langs[langSelect.indexOfSelectedItem()]
+      lang: langSelect.stringValue()
     };
+    Settings.setSettingForKey('sketchAirtableSync', pluginOptions);
+    return pluginOptions;
   } else {
     return false;
   }
@@ -871,7 +880,8 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "onSupplyData", function() { return onSupplyData; });
 var sketch = __webpack_require__(/*! sketch */ "sketch");
 
-var DataSupplier = sketch.DataSupplier;
+var DataSupplier = sketch.DataSupplier,
+    Settings = sketch.Settings;
 
 var util = __webpack_require__(/*! util */ "util");
 
@@ -879,10 +889,7 @@ var fetch = __webpack_require__(/*! sketch-polyfill-fetch */ "./node_modules/ske
 
 
 var _require = __webpack_require__(/*! ./secret */ "./src/secret.js"),
-    APIKey = _require.APIKey,
-    bases = _require.bases,
-    table = _require.table,
-    view = _require.view;
+    bases = _require.bases;
 
 var _require2 = __webpack_require__(/*! ./lib/alert */ "./src/lib/alert.js"),
     getUserSettings = _require2.getUserSettings;
@@ -892,14 +899,26 @@ var document = __webpack_require__(/*! sketch/dom */ "sketch/dom").getSelectedDo
 var baseNames = Object.keys(bases).map(function (base) {
   return base;
 });
-var langs = ['en_US', 'en_UK', 'fr_FR']; // Setting variables
+var langs = ['en_US', 'en_UK', 'fr_FR'];
+var views = ['Grid view']; // Setting variables
 
 var defaultSettings = {};
-defaultSettings.APIKey = APIKey;
-defaultSettings.base = bases.rvt2skp;
-defaultSettings.maxRecords = 15;
-defaultSettings.view = view;
-defaultSettings.lang = langs[0];
+var pluginOptions = Settings.settingForKey('sketchAirtableSync');
+
+if (pluginOptions) {
+  defaultSettings.APIKey = pluginOptions.APIKey;
+  defaultSettings.base = pluginOptions.base;
+  defaultSettings.maxRecords = pluginOptions.maxRecords;
+  defaultSettings.view = pluginOptions.view;
+  defaultSettings.lang = pluginOptions.lang;
+} else {
+  defaultSettings.APIKey = '';
+  defaultSettings.base = baseNames[0];
+  defaultSettings.maxRecords = 15;
+  defaultSettings.view = views[0];
+  defaultSettings.lang = langs[0];
+}
+
 function onStartup() {
   DataSupplier.registerDataSupplier('public.text', 'Sketch Airtable Sync', 'SupplyData');
 }
@@ -911,8 +930,7 @@ function onSupplyData(context) {
   var sketchDataKey = context.data.key;
   var items = util.toArray(context.data.items).map(sketch.fromNative); // Create UI
 
-  var userSettings = getUserSettings(defaultSettings, baseNames, langs);
-  log(userSettings); // We iterate on each target for data
+  var userSettings = getUserSettings(defaultSettings, baseNames, langs); // We iterate on each target for data
 
   items.forEach(function (item, index) {
     var layerName;
@@ -921,8 +939,7 @@ function onSupplyData(context) {
       layerName = item.override.affectedLayer.name;
     } else if (item.type === 'Text') {
       layerName = item.name;
-    } // console.log('layername', layerName);
-
+    }
 
     var layer;
 
@@ -940,8 +957,9 @@ function onSupplyData(context) {
     }
 
     if (layer.getParentArtboard()) {
-      var _table = layer.getParentArtboard().name;
-      var apiEndpoint = encodeURI("https://api.airtable.com/v0/".concat(userSettings.base, "/").concat(_table, "?maxRecords=").concat(userSettings.maxRecords, "&view=").concat(userSettings.view, "&api_key=").concat(userSettings.APIKey));
+      var currentTable = layer.getParentArtboard().name;
+      var currentBase = bases[userSettings.base];
+      var apiEndpoint = encodeURI("https://api.airtable.com/v0/".concat(currentBase, "/").concat(currentTable, "?maxRecords=").concat(userSettings.maxRecords, "&view=").concat(userSettings.view, "&api_key=").concat(userSettings.APIKey));
       fetch(apiEndpoint).then(function (res) {
         return res.json();
       }).then(function (data) {

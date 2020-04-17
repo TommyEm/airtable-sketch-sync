@@ -1,10 +1,12 @@
-const { bases, view } = require('../secret');
+const sketch = require('sketch');
+const { Settings } = sketch;
 const {
     createBoldLabel,
     createField,
     createSelect,
 } = require('./ui');
 
+const views = ['Grid view'];
 
 
 /**
@@ -59,7 +61,7 @@ export function getUserSettings(defaultSettings, baseNames, langs) {
 
 	const baseSelect = createSelect(
 		baseNames, 
-		0, 
+		baseNames.indexOf(defaultSettings.base), 
 		NSMakeRect(labelWidth, offsetY, fieldWidth, fieldHeight)
 	);
 	alertContent.addSubview(baseSelect);
@@ -76,9 +78,25 @@ export function getUserSettings(defaultSettings, baseNames, langs) {
 
 	const langSelect = createSelect(
 		langs, 
-		0, 
+		langs.indexOf(defaultSettings.lang), 
 		NSMakeRect(labelWidth, offsetY, fieldWidth, fieldHeight));
 	alertContent.addSubview(langSelect);
+
+	offsetY = CGRectGetMaxY(alertContent.subviews().lastObject().frame()) + fieldSpacing;
+
+
+	// View
+	const viewLabel = createBoldLabel(
+		'View',
+		12,
+		NSMakeRect(0, offsetY, fieldWidth, labelHeight));
+	alertContent.addSubview(viewLabel);
+
+	const viewSelect = createSelect(
+		views,
+		views.indexOf(defaultSettings.view),
+		NSMakeRect(labelWidth, offsetY, fieldWidth, fieldHeight));
+	alertContent.addSubview(viewSelect);
 
 	offsetY = CGRectGetMaxY(alertContent.subviews().lastObject().frame()) + fieldSpacing;
 
@@ -115,13 +133,17 @@ export function getUserSettings(defaultSettings, baseNames, langs) {
 	var responseCode = alert.runModal();
 
 	if (responseCode === 1000) {
-		return {
+		const pluginOptions = {
 			APIKey: APIKeyField.stringValue(),
-			base: bases[baseNames[baseSelect.indexOfSelectedItem()]],
-			view: view,
+			base: baseSelect.stringValue(),
+			view: viewSelect.stringValue(),
 			maxRecords: maxRecordsField.stringValue(),
-			lang: langs[langSelect.indexOfSelectedItem()],
-		}
+			lang: langSelect.stringValue(),
+		};
+
+		Settings.setSettingForKey('sketchAirtableSync', pluginOptions);
+
+		return pluginOptions;
 
 	} else {
 		return false;

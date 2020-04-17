@@ -1,14 +1,9 @@
 const sketch = require('sketch');
-const { DataSupplier } = sketch;
+const { DataSupplier, Settings } = sketch;
 const util = require('util');
 const fetch = require("sketch-polyfill-fetch");
 // const Airtable = require('airtable');
-const { 
-	APIKey, 
-	bases, 
-	table, 
-	view,
-} = require('./secret');
+const { bases } = require('./secret');
 const { getUserSettings } = require('./lib/alert');
 
 const document = require('sketch/dom').getSelectedDocument();
@@ -19,32 +14,46 @@ const langs = [
 	'en_UK',
 	'fr_FR',
 ];
+const views = ['Grid view'];
 
 // Setting variables
 let defaultSettings = {};
-defaultSettings.APIKey = APIKey;
-defaultSettings.base = bases.rvt2skp;
-defaultSettings.maxRecords = 15;
-defaultSettings.view = view;
-defaultSettings.lang = langs[0];
+const pluginOptions = Settings.settingForKey('sketchAirtableSync');
+
+if (pluginOptions) {
+	defaultSettings.APIKey = pluginOptions.APIKey;
+	defaultSettings.base = pluginOptions.base;
+	defaultSettings.maxRecords = pluginOptions.maxRecords;
+	defaultSettings.view = pluginOptions.view;
+	defaultSettings.lang = pluginOptions.lang;
+	
+} else {
+	defaultSettings.APIKey = '';
+	defaultSettings.base = baseNames[0];
+	defaultSettings.maxRecords = 15;
+	defaultSettings.view = views[0];
+	defaultSettings.lang = langs[0];
+}
 
 
 export function onStartup() {
 	DataSupplier.registerDataSupplier('public.text', 'Sketch Airtable Sync', 'SupplyData');
 }
 
+
 export function onShutdown() {
 	// Deregister the plugin
 	DataSupplier.deregisterDataSuppliers();
 }
 
+
 export function onSupplyData(context) {
 	let sketchDataKey = context.data.key;
 	const items = util.toArray(context.data.items).map(sketch.fromNative);
 
+
 	// Create UI
 	const userSettings = getUserSettings(defaultSettings, baseNames, langs);
-	log(userSettings);
 
 
 	// We iterate on each target for data
@@ -56,7 +65,6 @@ export function onSupplyData(context) {
 		} else if (item.type === 'Text') {
 			layerName = item.name;
 		}
-		// console.log('layername', layerName);
 
 
 		let layer;
@@ -75,9 +83,10 @@ export function onSupplyData(context) {
 
 		if (layer.getParentArtboard()) {
 		
-			const table = layer.getParentArtboard().name;
+			const currentTable = layer.getParentArtboard().name;
+			const currentBase = bases[userSettings.base];
 
-			const apiEndpoint = encodeURI(`https://api.airtable.com/v0/${userSettings.base}/${table}?maxRecords=${userSettings.maxRecords}&view=${userSettings.view}&api_key=${userSettings.APIKey}`);
+			const apiEndpoint = encodeURI(`https://api.airtable.com/v0/${currentBase}/${currentTable}?maxRecords=${userSettings.maxRecords}&view=${userSettings.view}&api_key=${userSettings.APIKey}`);
 
 			fetch(apiEndpoint)
 				.then((res) => res.json())

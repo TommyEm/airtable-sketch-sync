@@ -95,27 +95,10 @@ var exports =
 /*!***********************************!*\
   !*** ./src/sync-all-artboards.js ***!
   \***********************************/
-/*! exports provided: default */
-/***/ (function(module, __webpack_exports__, __webpack_require__) {
-
-"use strict";
-__webpack_require__.r(__webpack_exports__);
-var sketch = __webpack_require__(/*! sketch */ "sketch");
-
-/* harmony default export */ __webpack_exports__["default"] = (function () {
-  log('Sync all artboards on page');
-});
-
-/***/ }),
-
-/***/ "sketch":
-/*!*************************!*\
-  !*** external "sketch" ***!
-  \*************************/
-/*! no static exports found */
+/*! exports provided: syncAll, syncSelectedArtboards */
 /***/ (function(module, exports) {
 
-module.exports = require("sketch");
+throw new Error("Module build failed (from ./node_modules/babel-loader/lib/index.js):\nError: ENOENT: no such file or directory, open '/Users/Kubity/Dev/repos/sketch-airtable-sync/src/sync-all-artboards.js'");
 
 /***/ })
 
@@ -126,6 +109,8 @@ module.exports = require("sketch");
     exports[key](context);
   }
 }
-that['onRun'] = __skpm_run.bind(this, 'default')
+that['syncAll'] = __skpm_run.bind(this, 'syncAll');
+that['onRun'] = __skpm_run.bind(this, 'default');
+that['syncSelectedArtboards'] = __skpm_run.bind(this, 'syncSelectedArtboards')
 
 //# sourceMappingURL=sync-all-artboards.js.map

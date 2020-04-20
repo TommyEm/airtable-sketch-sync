@@ -5,7 +5,7 @@
   "suppliesData": true,
   "commands": [
     {
-      "script": "sync.js",
+      "script": "sync-layers.js",
       "handlers": {
         "actions": {
           "Startup": "onStartup",
@@ -15,9 +15,22 @@
       }
     },
     {
-      "name": "📝 Sync with Airtable",
+      "name": "📝 Sync all artboards",
       "identifier": "sketch-airtable-sync.sync-all-artboards-identifier",
-      "script": "sync-all-artboards.js"
+      "script": "sync-artboards.js",
+      "handlers": {
+        "run": "syncAllArtboards"
+      },
+      "description": "Sync content with Airtable on all artboards."
+    },
+    {
+      "name": "📝 Sync selected artboards",
+      "identifier": "sketch-airtable-sync.sync-selected-artboards-identifier",
+      "script": "sync-artboards.js",
+      "handlers": {
+        "run": "syncSelectedArtboards"
+      },
+      "description": "Sync content with Airtable on selected artboards."
     },
     {
       "name": "⚙️ Settings",
@@ -29,7 +42,8 @@
     "title": "Sketch Airtable Sync",
     "items": [
       "sketch-airtable-sync.settings-identifier",
-      "sketch-airtable-sync.sync-all-artboards-identifier"
+      "sketch-airtable-sync.sync-all-artboards-identifier",
+      "sketch-airtable-sync.sync-selected-artboards-identifier"
     ]
   },
   "version": "1.0.0",

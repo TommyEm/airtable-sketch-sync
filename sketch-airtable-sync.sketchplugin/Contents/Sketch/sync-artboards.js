@@ -974,8 +974,8 @@ module.exports = {
   APIKey: 'keyf4awab19Xtmlye',
   bases: {
     archiklip: 'appah63sWZZp4m8Na',
-    kubity: 'appspzJrn3jpBxBt1',
-    rvt2skp: 'appvF01ICAgG9SQ7w'
+    kubity: 'appkfJduoblSphVdp',
+    rvt2skp: 'appegmk9i1AWF5vwg'
   },
   table: 'YOUR-TABLE-NAME',
   view: 'Grid view'
@@ -1093,19 +1093,7 @@ function syncArtboard(artboard, options) {
   fetch(apiEndpoint).then(function (res) {
     return res.json();
   }).then(function (data) {
-    artboard.layers.forEach(function (layer) {
-      var layerName;
-
-      if (layer.type === 'SymbolInstance') {
-        layer.overrides.forEach(function (override) {
-          layerName = override.affectedLayer.name;
-          updateLayerValue(data, override, layerName, options);
-        });
-      } else if (layer.type === 'Text') {
-        layerName = layer.name;
-        updateLayerValue(data, layer, layerName, options);
-      }
-    });
+    syncLayerValue(artboard, data, options);
   }).catch(function (error) {
     if (error.response) {
       console.log(error.response.data);
@@ -1120,6 +1108,53 @@ function syncArtboard(artboard, options) {
   });
 }
 /**
+ * Sync a single layer upon his type
+ * 
+ * parentLayers stucture:
+ * - Symbol
+ *   - overrides
+ *     - {
+ *         - type
+ *         - value
+ *         - affectedLayer
+ *            - name
+ * 			  - type
+ *       }
+ * @param {object} parentLayers 
+ * @param {object} data 
+ * @param {object} options 
+ */
+
+
+function syncLayerValue(parentLayers, data, options) {
+  parentLayers.layers.forEach(function (layer) {
+    var layerName;
+
+    if (layer.type === 'SymbolInstance') {
+      var symbolName = layer.name;
+      log(symbolName); // log(layer.overrides);
+      // log(layer);
+      // syncLayerValue(layer, data, options);
+
+      layer.overrides.forEach(function (override) {
+        // if (
+        // 	override.affectedLayer.type === 'SymbolInstance' ||
+        // 	override.affectedLayer.type === 'Text'
+        // ) {
+        // 	log(JSON.stringify(override, null, 2));
+        // }
+        layerName = override.affectedLayer.name;
+        updateLayerValue(data, override, layerName, options, symbolName);
+      });
+    } else if (layer.type === 'Text') {
+      layerName = layer.name;
+      updateLayerValue(data, layer, layerName, options);
+    } else if (layer.type === 'Group') {
+      syncLayerValue(layer, data, options);
+    }
+  });
+}
+/**
  * Sync a layer content with Airtable
  * @param {object} data 
  * @param {object} layer 
@@ -1128,14 +1163,40 @@ function syncArtboard(artboard, options) {
  */
 
 
-function updateLayerValue(data, layer, layerName, options) {
+function updateLayerValue(data, layer, layerName, options, symbolName) {
   data.records.reverse().map(function (record) {
-    if (record.fields.Name === layerName) {
+    var recordName = record.fields.Name;
+    var recordNames = [];
+    var cleanLayerName = layerName; // Support for emojis in layer names
+    // They will be ignored
+
+    var emojis = /([\u2700-\u27BF]|[\uE000-\uF8FF]|\uD83C[\uDC00-\uDFFF]|\uD83D[\uDC00-\uDFFF]|[\u2011-\u26FF]|\uD83E[\uDD10-\uDDFF])/g;
+
+    if (layerName.match(emojis)) {
+      cleanLayerName = layerName.replace(emojis, '').replace('️', '') // Beware, there's an invisible character here
+      .trim();
+    } // Check symbol overrides. Record names must use a / (forward slash) for this.
+    // Template: "Symbol Name / Override Name"
+
+
+    if (symbolName && recordName.match(symbolName) && recordName.match(/\//)) {
+      var names = recordName.split('/');
+      recordNames = names.map(function (name) {
+        return name.trim();
+      });
+    } // Here we inject the value from Airtable into the Sketch layer
+
+
+    if (recordName === cleanLayerName || recordNames[1] === cleanLayerName) {
       var currentCellData = record.fields[options.lang];
 
       var _data = currentCellData ? currentCellData : ' ';
 
-      layer.value = _data;
+      if (layer.value) {
+        layer.value = _data;
+      } else if (layer.text) {
+        layer.text = _data;
+      }
     }
   });
 }

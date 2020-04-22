@@ -1,4 +1,5 @@
 const document = require('sketch/dom').getSelectedDocument();
+const { SymbolMaster } = require('sketch/dom');
 const { pluginSettings } = require('./settings');
 const { bases } = require('./secret');
 const { getUserOptions } = require('./lib/alert');
@@ -7,9 +8,10 @@ const {
 	baseNames,
 	langs,
 } = require('./defaults');
-const { getApiEndpoint } = require('./lib/utils');
+const { getApiEndpoint, removeEmojis } = require('./lib/utils');
 
 
+const foreignSymbolMasters = getForeignSymbolMasters(document);
 const defaultOptions = getDefaultOptions();
 
 
@@ -70,6 +72,34 @@ function syncArtboard(artboard, options) {
 	const table = artboard.name;
 	const base = bases[options.base];
 
+
+	const commonDataApiEndpoint = getApiEndpoint(
+		base,
+		'Global Template',
+		options.maxRecords,
+		options.view,
+		pluginSettings.APIKey,
+	);
+	let commonData;
+
+	fetch(commonDataApiEndpoint)
+		.then((res) => res.json())
+		.then((data) => {
+			commonData = data;
+		})
+		.catch((error) => {
+			if (error.response) {
+				console.log(error.response.data);
+			} else if (error.request) {
+				console.log(error.request);
+			} else {
+				// Something happened in setting up the request that triggered an Error
+				console.log('Error', error.message);
+			}
+			console.log(error.config);
+		});
+
+
 	const apiEndpoint = getApiEndpoint(
 		base,
 		table,
@@ -78,11 +108,10 @@ function syncArtboard(artboard, options) {
 		pluginSettings.APIKey,
 	);
 
-
 	fetch(apiEndpoint)
 		.then((res) => res.json())
 		.then((data) => {
-			syncLayerValue(artboard, data, options);
+			syncLayerValue(artboard, data, commonData, options);
 		})
 		.catch((error) => {
 			if (error.response) {
@@ -115,7 +144,7 @@ function syncArtboard(artboard, options) {
  * @param {object} data 
  * @param {object} options 
  */
-function syncLayerValue(parentLayers, data, options) {
+function syncLayerValue(parentLayers, data, commonData, options) {
 	parentLayers.layers.forEach(layer => {
 		let layerName;
 
@@ -123,19 +152,46 @@ function syncLayerValue(parentLayers, data, options) {
 			const symbolName = layer.name;
 			log(symbolName);
 
+
 			// log(layer.overrides);
 			// log(layer);
-			// syncLayerValue(layer, data, options);
+			// syncLayerValue(layer, data, commonData, options);
 			layer.overrides.forEach(override => {
-				// if (
-				// 	override.affectedLayer.type === 'SymbolInstance' ||
-				// 	override.affectedLayer.type === 'Text'
-				// ) {
-				// 	log(JSON.stringify(override, null, 2));
-				// }
+				// let overrideFullName;
+
+				if (
+					override.affectedLayer.type === 'SymbolInstance' ||
+					override.affectedLayer.type === 'Text'
+				) {
+					const idHierarchy = override.path.split('/');
+					let overrideNameHierarchy = [symbolName];
 					
-				layerName = override.affectedLayer.name;
-				updateLayerValue(data, override, layerName, options, symbolName);
+					idHierarchy.forEach(id => {
+						let overrideName;
+						let overrideNameFromPath = document.getLayerWithID(id);
+
+						if (overrideNameFromPath === undefined) {
+							// If it's undefined, the layer comes from a library, we need a special treatment to retrieve it
+							overrideName = getForeignLayerNameWithID(id, foreignSymbolMasters);
+							overrideName = overrideName ? removeEmojis(overrideName) : undefined;
+
+						} else {
+							overrideName = overrideNameFromPath;
+							
+						}
+						overrideNameHierarchy.push(overrideName);
+					});
+
+					const overrideFullName = overrideNameHierarchy.join(' / ');
+
+					layerName = override.affectedLayer.name;
+					// log(layerName);
+					// log(overrideFullName);
+					// updateLayerValue(data, override, layerName, options, overrideFullName);
+					updateLayerValue(commonData, override, layerName, options, overrideFullName);
+					// updateLayerValue(data, override, layerName, options, symbolName);
+				}
+					
 			});
 
 		} else if (layer.type === 'Text') {
@@ -143,7 +199,7 @@ function syncLayerValue(parentLayers, data, options) {
 			updateLayerValue(data, layer, layerName, options);
 
 		} else if (layer.type === 'Group') {
-			syncLayerValue(layer, data, options);
+			syncLayerValue(layer, data, commonData, options);
 		}
 	});
 }
@@ -160,32 +216,45 @@ function updateLayerValue(data, layer, layerName, options, symbolName) {
 	data.records.reverse().map((record) => {
 		const recordName = record.fields.Name;
 		let recordNames = [];
-		let cleanLayerName = layerName;
-
+		
 		// Support for emojis in layer names
 		// They will be ignored
-		const emojis = /([\u2700-\u27BF]|[\uE000-\uF8FF]|\uD83C[\uDC00-\uDFFF]|\uD83D[\uDC00-\uDFFF]|[\u2011-\u26FF]|\uD83E[\uDD10-\uDDFF])/g;
-
-		if (layerName.match(emojis)) {
-			cleanLayerName = layerName
-				.replace(emojis, '')
-				.replace('️', '') // Beware, there's an invisible character here
-				.trim();
-		}
+		let cleanLayerName = removeEmojis(layerName);
+		
 
 		// Check symbol overrides. Record names must use a / (forward slash) for this.
 		// Template: "Symbol Name / Override Name"
-		if (symbolName && 
-			recordName.match(symbolName) && 
-			recordName.match(/\//)
-		) {
+
+		// if (symbolName && 
+		// 	recordName.match(symbolName) && 
+		// 	recordName.match(/\//)
+		// ) {
+		// 	const names = recordName.split('/');
+		// 	recordNames = names.map(name => name.trim());
+		// }
+		if (symbolName) {
 			const names = recordName.split('/');
 			recordNames = names.map(name => name.trim());
-		}
-		
+			
+			// const reg = new RegExp('(' + recordNames.join(').*(') + ')', 'i');
+			const reg = new RegExp(recordNames.join('.*'), 'i');
+			// log(reg);
+			if (
+				symbolName.match(reg) &&
+				layer
+			) {
+				// console.log('symbol', symbolName);
+				// console.log('record', JSON.stringify(recordNames, null, 2));
+				// log(symbolName.match(reg));
+				log(JSON.stringify(layer.text, null, 2));
 
-		// Here we inject the value from Airtable into the Sketch layer
-		if (
+				// Not working
+				const currentCellData = record.fields[options.lang];
+				const data = currentCellData ? currentCellData : ' ';
+				layer.text = data;
+			}
+
+		} else if ( // Here we inject the value from Airtable into the Sketch layer
 			recordName === cleanLayerName || 
 			recordNames[1] === cleanLayerName
 		) {
@@ -200,4 +269,32 @@ function updateLayerValue(data, layer, layerName, options, symbolName) {
 			}
 		}
 	});
+}
+
+
+
+function getForeignSymbolMasters(document) {
+	let foreignSymbolList = document.sketchObject.documentData().foreignSymbols();
+	let symbolMasters = [];
+	foreignSymbolList.forEach(foreignSymbol => {
+		symbolMasters.push(SymbolMaster.fromNative(foreignSymbol.localObject()));
+	});
+	return symbolMasters;
+}
+
+function getForeignLayerNameWithID(layerID, masters) {
+	let match;
+	let layerName;
+	for (let master of masters) {
+		match = master.sketchObject.layers().find(layer => {
+			if (layer.objectID() == layerID) {
+				layerName = layer.name();
+			}
+			return layer.objectID() == layerID;
+		});
+		if (match) { 
+			break; 
+		}
+	}
+	return layerName;
 }

@@ -951,14 +951,30 @@ function createSelect(items, selectedItemIndex, frame) {
 /*!**************************!*\
   !*** ./src/lib/utils.js ***!
   \**************************/
-/*! exports provided: getApiEndpoint */
+/*! exports provided: getApiEndpoint, removeEmojis */
 /***/ (function(module, __webpack_exports__, __webpack_require__) {
 
 "use strict";
 __webpack_require__.r(__webpack_exports__);
 /* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "getApiEndpoint", function() { return getApiEndpoint; });
+/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "removeEmojis", function() { return removeEmojis; });
 function getApiEndpoint(base, table, maxRecords, view, APIKey) {
   return encodeURI("https://api.airtable.com/v0/".concat(base, "/").concat(table, "?maxRecords=").concat(maxRecords, "&view=").concat(view, "&api_key=").concat(APIKey));
+}
+/**
+ * 
+ * @param {string} string 
+ */
+
+function removeEmojis(string) {
+  var emojis = /([\u2700-\u27BF]|[\uE000-\uF8FF]|\uD83C[\uDC00-\uDFFF]|\uD83D[\uDC00-\uDFFF]|[\u2011-\u26FF]|\uD83E[\uDD10-\uDDFF])/g;
+
+  if (string.match(emojis)) {
+    return string.replace(emojis, '').replace('️', '') // Beware, there's an invisible character here
+    .trim();
+  } else {
+    return string.trim();
+  }
 }
 
 /***/ }),
@@ -1027,25 +1043,36 @@ if (pluginSettings) {
 __webpack_require__.r(__webpack_exports__);
 /* WEBPACK VAR INJECTION */(function(fetch) {/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "syncAllArtboards", function() { return syncAllArtboards; });
 /* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "syncSelectedArtboards", function() { return syncSelectedArtboards; });
+function _createForOfIteratorHelper(o) { if (typeof Symbol === "undefined" || o[Symbol.iterator] == null) { if (Array.isArray(o) || (o = _unsupportedIterableToArray(o))) { var i = 0; var F = function F() {}; return { s: F, n: function n() { if (i >= o.length) return { done: true }; return { done: false, value: o[i++] }; }, e: function e(_e) { throw _e; }, f: F }; } throw new TypeError("Invalid attempt to iterate non-iterable instance.\nIn order to be iterable, non-array objects must have a [Symbol.iterator]() method."); } var it, normalCompletion = true, didErr = false, err; return { s: function s() { it = o[Symbol.iterator](); }, n: function n() { var step = it.next(); normalCompletion = step.done; return step; }, e: function e(_e2) { didErr = true; err = _e2; }, f: function f() { try { if (!normalCompletion && it.return != null) it.return(); } finally { if (didErr) throw err; } } }; }
+
+function _unsupportedIterableToArray(o, minLen) { if (!o) return; if (typeof o === "string") return _arrayLikeToArray(o, minLen); var n = Object.prototype.toString.call(o).slice(8, -1); if (n === "Object" && o.constructor) n = o.constructor.name; if (n === "Map" || n === "Set") return Array.from(n); if (n === "Arguments" || /^(?:Ui|I)nt(?:8|16|32)(?:Clamped)?Array$/.test(n)) return _arrayLikeToArray(o, minLen); }
+
+function _arrayLikeToArray(arr, len) { if (len == null || len > arr.length) len = arr.length; for (var i = 0, arr2 = new Array(len); i < len; i++) { arr2[i] = arr[i]; } return arr2; }
+
 var document = __webpack_require__(/*! sketch/dom */ "sketch/dom").getSelectedDocument();
 
-var _require = __webpack_require__(/*! ./settings */ "./src/settings.js"),
-    pluginSettings = _require.pluginSettings;
+var _require = __webpack_require__(/*! sketch/dom */ "sketch/dom"),
+    SymbolMaster = _require.SymbolMaster;
 
-var _require2 = __webpack_require__(/*! ./secret */ "./src/secret.js"),
-    bases = _require2.bases;
+var _require2 = __webpack_require__(/*! ./settings */ "./src/settings.js"),
+    pluginSettings = _require2.pluginSettings;
 
-var _require3 = __webpack_require__(/*! ./lib/alert */ "./src/lib/alert.js"),
-    getUserOptions = _require3.getUserOptions;
+var _require3 = __webpack_require__(/*! ./secret */ "./src/secret.js"),
+    bases = _require3.bases;
 
-var _require4 = __webpack_require__(/*! ./defaults */ "./src/defaults.js"),
-    getDefaultOptions = _require4.getDefaultOptions,
-    baseNames = _require4.baseNames,
-    langs = _require4.langs;
+var _require4 = __webpack_require__(/*! ./lib/alert */ "./src/lib/alert.js"),
+    getUserOptions = _require4.getUserOptions;
 
-var _require5 = __webpack_require__(/*! ./lib/utils */ "./src/lib/utils.js"),
-    getApiEndpoint = _require5.getApiEndpoint;
+var _require5 = __webpack_require__(/*! ./defaults */ "./src/defaults.js"),
+    getDefaultOptions = _require5.getDefaultOptions,
+    baseNames = _require5.baseNames,
+    langs = _require5.langs;
 
+var _require6 = __webpack_require__(/*! ./lib/utils */ "./src/lib/utils.js"),
+    getApiEndpoint = _require6.getApiEndpoint,
+    removeEmojis = _require6.removeEmojis;
+
+var foreignSymbolMasters = getForeignSymbolMasters(document);
 var defaultOptions = getDefaultOptions();
 function syncAllArtboards(context) {
   log('Sync all artboards on page'); // Get user options from modal
@@ -1089,11 +1116,29 @@ function syncSelectedArtboards(context) {
 function syncArtboard(artboard, options) {
   var table = artboard.name;
   var base = bases[options.base];
+  var commonDataApiEndpoint = getApiEndpoint(base, 'Global Template', options.maxRecords, options.view, pluginSettings.APIKey);
+  var commonData;
+  fetch(commonDataApiEndpoint).then(function (res) {
+    return res.json();
+  }).then(function (data) {
+    commonData = data;
+  }).catch(function (error) {
+    if (error.response) {
+      console.log(error.response.data);
+    } else if (error.request) {
+      console.log(error.request);
+    } else {
+      // Something happened in setting up the request that triggered an Error
+      console.log('Error', error.message);
+    }
+
+    console.log(error.config);
+  });
   var apiEndpoint = getApiEndpoint(base, table, options.maxRecords, options.view, pluginSettings.APIKey);
   fetch(apiEndpoint).then(function (res) {
     return res.json();
   }).then(function (data) {
-    syncLayerValue(artboard, data, options);
+    syncLayerValue(artboard, data, commonData, options);
   }).catch(function (error) {
     if (error.response) {
       console.log(error.response.data);
@@ -1126,7 +1171,7 @@ function syncArtboard(artboard, options) {
  */
 
 
-function syncLayerValue(parentLayers, data, options) {
+function syncLayerValue(parentLayers, data, commonData, options) {
   parentLayers.layers.forEach(function (layer) {
     var layerName;
 
@@ -1134,23 +1179,40 @@ function syncLayerValue(parentLayers, data, options) {
       var symbolName = layer.name;
       log(symbolName); // log(layer.overrides);
       // log(layer);
-      // syncLayerValue(layer, data, options);
+      // syncLayerValue(layer, data, commonData, options);
 
       layer.overrides.forEach(function (override) {
-        // if (
-        // 	override.affectedLayer.type === 'SymbolInstance' ||
-        // 	override.affectedLayer.type === 'Text'
-        // ) {
-        // 	log(JSON.stringify(override, null, 2));
-        // }
-        layerName = override.affectedLayer.name;
-        updateLayerValue(data, override, layerName, options, symbolName);
+        // let overrideFullName;
+        if (override.affectedLayer.type === 'SymbolInstance' || override.affectedLayer.type === 'Text') {
+          var idHierarchy = override.path.split('/');
+          var overrideNameHierarchy = [symbolName];
+          idHierarchy.forEach(function (id) {
+            var overrideName;
+            var overrideNameFromPath = document.getLayerWithID(id);
+
+            if (overrideNameFromPath === undefined) {
+              // If it's undefined, the layer comes from a library, we need a special treatment to retrieve it
+              overrideName = getForeignLayerNameWithID(id, foreignSymbolMasters);
+              overrideName = overrideName ? removeEmojis(overrideName) : undefined;
+            } else {
+              overrideName = overrideNameFromPath;
+            }
+
+            overrideNameHierarchy.push(overrideName);
+          });
+          var overrideFullName = overrideNameHierarchy.join(' / ');
+          layerName = override.affectedLayer.name; // log(layerName);
+          // log(overrideFullName);
+          // updateLayerValue(data, override, layerName, options, overrideFullName);
+
+          updateLayerValue(commonData, override, layerName, options, overrideFullName); // updateLayerValue(data, override, layerName, options, symbolName);
+        }
       });
     } else if (layer.type === 'Text') {
       layerName = layer.name;
       updateLayerValue(data, layer, layerName, options);
     } else if (layer.type === 'Group') {
-      syncLayerValue(layer, data, options);
+      syncLayerValue(layer, data, commonData, options);
     }
   });
 }
@@ -1166,39 +1228,92 @@ function syncLayerValue(parentLayers, data, options) {
 function updateLayerValue(data, layer, layerName, options, symbolName) {
   data.records.reverse().map(function (record) {
     var recordName = record.fields.Name;
-    var recordNames = [];
-    var cleanLayerName = layerName; // Support for emojis in layer names
+    var recordNames = []; // Support for emojis in layer names
     // They will be ignored
 
-    var emojis = /([\u2700-\u27BF]|[\uE000-\uF8FF]|\uD83C[\uDC00-\uDFFF]|\uD83D[\uDC00-\uDFFF]|[\u2011-\u26FF]|\uD83E[\uDD10-\uDDFF])/g;
-
-    if (layerName.match(emojis)) {
-      cleanLayerName = layerName.replace(emojis, '').replace('️', '') // Beware, there's an invisible character here
-      .trim();
-    } // Check symbol overrides. Record names must use a / (forward slash) for this.
+    var cleanLayerName = removeEmojis(layerName); // Check symbol overrides. Record names must use a / (forward slash) for this.
     // Template: "Symbol Name / Override Name"
+    // if (symbolName && 
+    // 	recordName.match(symbolName) && 
+    // 	recordName.match(/\//)
+    // ) {
+    // 	const names = recordName.split('/');
+    // 	recordNames = names.map(name => name.trim());
+    // }
 
-
-    if (symbolName && recordName.match(symbolName) && recordName.match(/\//)) {
+    if (symbolName) {
       var names = recordName.split('/');
       recordNames = names.map(function (name) {
         return name.trim();
-      });
-    } // Here we inject the value from Airtable into the Sketch layer
+      }); // const reg = new RegExp('(' + recordNames.join(').*(') + ')', 'i');
 
+      var reg = new RegExp(recordNames.join('.*'), 'i'); // log(reg);
 
-    if (recordName === cleanLayerName || recordNames[1] === cleanLayerName) {
-      var currentCellData = record.fields[options.lang];
+      if (symbolName.match(reg) && layer) {
+        // console.log('symbol', symbolName);
+        // console.log('record', JSON.stringify(recordNames, null, 2));
+        // log(symbolName.match(reg));
+        log(JSON.stringify(layer.text, null, 2)); // Not working
 
-      var _data = currentCellData ? currentCellData : ' ';
+        var currentCellData = record.fields[options.lang];
+
+        var _data = currentCellData ? currentCellData : ' ';
+
+        layer.text = _data;
+      }
+    } else if ( // Here we inject the value from Airtable into the Sketch layer
+    recordName === cleanLayerName || recordNames[1] === cleanLayerName) {
+      var _currentCellData = record.fields[options.lang];
+
+      var _data2 = _currentCellData ? _currentCellData : ' ';
 
       if (layer.value) {
-        layer.value = _data;
+        layer.value = _data2;
       } else if (layer.text) {
-        layer.text = _data;
+        layer.text = _data2;
       }
     }
   });
+}
+
+function getForeignSymbolMasters(document) {
+  var foreignSymbolList = document.sketchObject.documentData().foreignSymbols();
+  var symbolMasters = [];
+  foreignSymbolList.forEach(function (foreignSymbol) {
+    symbolMasters.push(SymbolMaster.fromNative(foreignSymbol.localObject()));
+  });
+  return symbolMasters;
+}
+
+function getForeignLayerNameWithID(layerID, masters) {
+  var match;
+  var layerName;
+
+  var _iterator = _createForOfIteratorHelper(masters),
+      _step;
+
+  try {
+    for (_iterator.s(); !(_step = _iterator.n()).done;) {
+      var master = _step.value;
+      match = master.sketchObject.layers().find(function (layer) {
+        if (layer.objectID() == layerID) {
+          layerName = layer.name();
+        }
+
+        return layer.objectID() == layerID;
+      });
+
+      if (match) {
+        break;
+      }
+    }
+  } catch (err) {
+    _iterator.e(err);
+  } finally {
+    _iterator.f();
+  }
+
+  return layerName;
 }
 /* WEBPACK VAR INJECTION */}.call(this, __webpack_require__(/*! ./node_modules/sketch-polyfill-fetch/lib/index.js */ "./node_modules/sketch-polyfill-fetch/lib/index.js")))
 

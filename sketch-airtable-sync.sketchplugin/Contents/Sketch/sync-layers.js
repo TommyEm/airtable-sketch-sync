@@ -951,14 +951,30 @@ function createSelect(items, selectedItemIndex, frame) {
 /*!**************************!*\
   !*** ./src/lib/utils.js ***!
   \**************************/
-/*! exports provided: getApiEndpoint */
+/*! exports provided: getApiEndpoint, removeEmojis */
 /***/ (function(module, __webpack_exports__, __webpack_require__) {
 
 "use strict";
 __webpack_require__.r(__webpack_exports__);
 /* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "getApiEndpoint", function() { return getApiEndpoint; });
+/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "removeEmojis", function() { return removeEmojis; });
 function getApiEndpoint(base, table, maxRecords, view, APIKey) {
   return encodeURI("https://api.airtable.com/v0/".concat(base, "/").concat(table, "?maxRecords=").concat(maxRecords, "&view=").concat(view, "&api_key=").concat(APIKey));
+}
+/**
+ * 
+ * @param {string} string 
+ */
+
+function removeEmojis(string) {
+  var emojis = /([\u2700-\u27BF]|[\uE000-\uF8FF]|\uD83C[\uDC00-\uDFFF]|\uD83D[\uDC00-\uDFFF]|[\u2011-\u26FF]|\uD83E[\uDD10-\uDDFF])/g;
+
+  if (string.match(emojis)) {
+    return string.replace(emojis, '').replace('️', '') // Beware, there's an invisible character here
+    .trim();
+  } else {
+    return string.trim();
+  }
 }
 
 /***/ }),

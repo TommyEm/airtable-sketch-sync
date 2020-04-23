@@ -1176,13 +1176,20 @@ function syncLayerValue(parentLayers, data, commonData, options) {
     var layerName;
 
     if (layer.type === 'SymbolInstance') {
-      var symbolName = layer.name;
-      log(symbolName); // log(layer.overrides);
+      var symbolName = layer.name; // log(symbolName);
+      // log(layer.overrides);
       // log(layer);
       // syncLayerValue(layer, data, commonData, options);
 
       layer.overrides.forEach(function (override) {
-        // let overrideFullName;
+        if (override.affectedLayer.name.match(/Label/) && layer.name === 'Drop Zone') {
+          log(layer.name);
+          log(override.affectedLayer.id);
+          log(getForeignLayerNameWithID(override.affectedLayer.id, foreignSymbolMasters));
+        }
+
+        return;
+
         if (override.affectedLayer.type === 'SymbolInstance' || override.affectedLayer.type === 'Text') {
           var idHierarchy = override.path.split('/');
           var overrideNameHierarchy = [symbolName];
@@ -1195,7 +1202,7 @@ function syncLayerValue(parentLayers, data, commonData, options) {
               overrideName = getForeignLayerNameWithID(id, foreignSymbolMasters);
               overrideName = overrideName ? removeEmojis(overrideName) : undefined;
             } else {
-              overrideName = overrideNameFromPath;
+              overrideName = removeEmojis(overrideNameFromPath.name);
             }
 
             overrideNameHierarchy.push(overrideName);
@@ -1203,14 +1210,13 @@ function syncLayerValue(parentLayers, data, commonData, options) {
           var overrideFullName = overrideNameHierarchy.join(' / ');
           layerName = override.affectedLayer.name; // log(layerName);
           // log(overrideFullName);
-          // updateLayerValue(data, override, layerName, options, overrideFullName);
+          // updateLayerValue(commonData, override, layerName, options, overrideFullName);
 
-          updateLayerValue(commonData, override, layerName, options, overrideFullName); // updateLayerValue(data, override, layerName, options, symbolName);
+          updateLayerValue(data, override, layerName, options, overrideFullName);
         }
-      });
-    } else if (layer.type === 'Text') {
-      layerName = layer.name;
-      updateLayerValue(data, layer, layerName, options);
+      }); // } else if (layer.type === 'Text') {
+      // 	layerName = layer.name;
+      // 	updateLayerValue(data, layer, layerName, options);
     } else if (layer.type === 'Group') {
       syncLayerValue(layer, data, commonData, options);
     }
@@ -1231,7 +1237,7 @@ function updateLayerValue(data, layer, layerName, options, symbolName) {
     var recordNames = []; // Support for emojis in layer names
     // They will be ignored
 
-    var cleanLayerName = removeEmojis(layerName); // Check symbol overrides. Record names must use a / (forward slash) for this.
+    var cleanLayerName = removeEmojis(layerName); // Check symbol with nested overrides. Record names must use a / (forward slash) for this.
     // Template: "Symbol Name / Override Name"
     // if (symbolName && 
     // 	recordName.match(symbolName) && 
@@ -1245,21 +1251,19 @@ function updateLayerValue(data, layer, layerName, options, symbolName) {
       var names = recordName.split('/');
       recordNames = names.map(function (name) {
         return name.trim();
-      }); // const reg = new RegExp('(' + recordNames.join(').*(') + ')', 'i');
-
-      var reg = new RegExp(recordNames.join('.*'), 'i'); // log(reg);
+      });
+      var reg = new RegExp(recordNames.join('.*'), 'i');
 
       if (symbolName.match(reg) && layer) {
-        // console.log('symbol', symbolName);
-        // console.log('record', JSON.stringify(recordNames, null, 2));
-        // log(symbolName.match(reg));
-        log(JSON.stringify(layer.text, null, 2)); // Not working
-
         var currentCellData = record.fields[options.lang];
 
         var _data = currentCellData ? currentCellData : ' ';
 
-        layer.text = _data;
+        if (layer.value) {
+          layer.value = _data;
+        } else if (layer.text) {
+          layer.text = _data;
+        }
       }
     } else if ( // Here we inject the value from Airtable into the Sketch layer
     recordName === cleanLayerName || recordNames[1] === cleanLayerName) {

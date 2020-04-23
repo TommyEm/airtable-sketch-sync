@@ -150,14 +150,22 @@ function syncLayerValue(parentLayers, data, commonData, options) {
 
 		if (layer.type === 'SymbolInstance') {
 			const symbolName = layer.name;
-			log(symbolName);
+			// log(symbolName);
 
 
 			// log(layer.overrides);
 			// log(layer);
 			// syncLayerValue(layer, data, commonData, options);
 			layer.overrides.forEach(override => {
-				// let overrideFullName;
+				// To Debug
+				// if (
+				// 	override.affectedLayer.name.match(/Label/) 
+				// 	&& layer.name === 'Drop Zone'
+				// ) {
+				// 	log(layer.name);
+				// 	log(override.affectedLayer.id);
+				// 	log(getForeignLayerNameWithID(override.affectedLayer.id, foreignSymbolMasters));
+				// }
 
 				if (
 					override.affectedLayer.type === 'SymbolInstance' ||
@@ -176,10 +184,11 @@ function syncLayerValue(parentLayers, data, commonData, options) {
 							overrideName = overrideName ? removeEmojis(overrideName) : undefined;
 
 						} else {
-							overrideName = overrideNameFromPath;
-							
+							overrideName = removeEmojis(overrideNameFromPath.name);
 						}
+							
 						overrideNameHierarchy.push(overrideName);
+
 					});
 
 					const overrideFullName = overrideNameHierarchy.join(' / ');
@@ -187,9 +196,8 @@ function syncLayerValue(parentLayers, data, commonData, options) {
 					layerName = override.affectedLayer.name;
 					// log(layerName);
 					// log(overrideFullName);
-					// updateLayerValue(data, override, layerName, options, overrideFullName);
 					updateLayerValue(commonData, override, layerName, options, overrideFullName);
-					// updateLayerValue(data, override, layerName, options, symbolName);
+					updateLayerValue(data, override, layerName, options, overrideFullName);
 				}
 					
 			});
@@ -222,7 +230,7 @@ function updateLayerValue(data, layer, layerName, options, symbolName) {
 		let cleanLayerName = removeEmojis(layerName);
 		
 
-		// Check symbol overrides. Record names must use a / (forward slash) for this.
+		// Check symbol with nested overrides. Record names must use a / (forward slash) for this.
 		// Template: "Symbol Name / Override Name"
 
 		// if (symbolName && 
@@ -235,26 +243,23 @@ function updateLayerValue(data, layer, layerName, options, symbolName) {
 		if (symbolName) {
 			const names = recordName.split('/');
 			recordNames = names.map(name => name.trim());
-			
-			// const reg = new RegExp('(' + recordNames.join(').*(') + ')', 'i');
-			const reg = new RegExp(recordNames.join('.*'), 'i');
-			// log(reg);
-			if (
-				symbolName.match(reg) &&
-				layer
-			) {
-				// console.log('symbol', symbolName);
-				// console.log('record', JSON.stringify(recordNames, null, 2));
-				// log(symbolName.match(reg));
-				log(JSON.stringify(layer.text, null, 2));
 
-				// Not working
+			const reg = new RegExp(recordNames.join('.*'), 'i');
+
+			if (symbolName.match(reg) && layer ) {
 				const currentCellData = record.fields[options.lang];
 				const data = currentCellData ? currentCellData : ' ';
-				layer.text = data;
+
+				if (layer.value) {
+					layer.value = data;
+
+				} else if (layer.text) {
+					layer.text = data;
+				}
 			}
 
-		} else if ( // Here we inject the value from Airtable into the Sketch layer
+		} else if ( 
+		// Here we inject the value from Airtable into the Sketch layer
 			recordName === cleanLayerName || 
 			recordNames[1] === cleanLayerName
 		) {

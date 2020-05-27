@@ -1182,14 +1182,15 @@ function syncLayerValue(parentLayers, data, commonData, options) {
       // syncLayerValue(layer, data, commonData, options);
 
       layer.overrides.forEach(function (override) {
-        if (override.affectedLayer.name.match(/Label/) && layer.name === 'Drop Zone') {
-          log(layer.name);
-          log(override.affectedLayer.id);
-          log(getForeignLayerNameWithID(override.affectedLayer.id, foreignSymbolMasters));
-        }
-
-        return;
-
+        // To Debug
+        // if (
+        // 	override.affectedLayer.name.match(/Label/) 
+        // 	&& layer.name === 'Drop Zone'
+        // ) {
+        // 	log(layer.name);
+        // 	log(override.affectedLayer.id);
+        // 	log(getForeignLayerNameWithID(override.affectedLayer.id, foreignSymbolMasters));
+        // }
         if (override.affectedLayer.type === 'SymbolInstance' || override.affectedLayer.type === 'Text') {
           var idHierarchy = override.path.split('/');
           var overrideNameHierarchy = [symbolName];
@@ -1210,13 +1211,14 @@ function syncLayerValue(parentLayers, data, commonData, options) {
           var overrideFullName = overrideNameHierarchy.join(' / ');
           layerName = override.affectedLayer.name; // log(layerName);
           // log(overrideFullName);
-          // updateLayerValue(commonData, override, layerName, options, overrideFullName);
 
+          updateLayerValue(commonData, override, layerName, options, overrideFullName);
           updateLayerValue(data, override, layerName, options, overrideFullName);
         }
-      }); // } else if (layer.type === 'Text') {
-      // 	layerName = layer.name;
-      // 	updateLayerValue(data, layer, layerName, options);
+      });
+    } else if (layer.type === 'Text') {
+      layerName = layer.name;
+      updateLayerValue(data, layer, layerName, options);
     } else if (layer.type === 'Group') {
       syncLayerValue(layer, data, commonData, options);
     }

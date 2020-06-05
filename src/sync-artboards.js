@@ -1,3 +1,4 @@
+const sketch = require('sketch');
 const document = require('sketch/dom').getSelectedDocument();
 const { SymbolMaster } = require('sketch/dom');
 const { pluginSettings } = require('./settings');
@@ -23,6 +24,8 @@ export function syncAllArtboards(context) {
 
 	if (userOptions) {
 
+		let currentPage = 0;
+
 		// Get Pages
 		document.pages.forEach(page => {
 			page.layers.forEach(layer => {
@@ -33,6 +36,13 @@ export function syncAllArtboards(context) {
 				}
 
 			});
+
+			if (currentPage === document.pages.length) {
+				sketch.UI.message('Sync finished');
+			} else {
+				++currentPage;
+			}
+
 
 		});
 
@@ -112,6 +122,10 @@ function syncArtboard(artboard, options) {
 		.then((res) => res.json())
 		.then((data) => {
 			syncLayerValue(artboard, data, commonData, options);
+		})
+		.then(() => {
+			sketch.UI.message('Sync finished!');
+			log('DONE');
 		})
 		.catch((error) => {
 			if (error.response) {

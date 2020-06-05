@@ -1049,6 +1049,8 @@ function _unsupportedIterableToArray(o, minLen) { if (!o) return; if (typeof o =
 
 function _arrayLikeToArray(arr, len) { if (len == null || len > arr.length) len = arr.length; for (var i = 0, arr2 = new Array(len); i < len; i++) { arr2[i] = arr[i]; } return arr2; }
 
+var sketch = __webpack_require__(/*! sketch */ "sketch");
+
 var document = __webpack_require__(/*! sketch/dom */ "sketch/dom").getSelectedDocument();
 
 var _require = __webpack_require__(/*! sketch/dom */ "sketch/dom"),
@@ -1080,7 +1082,8 @@ function syncAllArtboards(context) {
   var userOptions = getUserOptions(defaultOptions, baseNames, langs);
 
   if (userOptions) {
-    // Get Pages
+    var currentPage = 0; // Get Pages
+
     document.pages.forEach(function (page) {
       page.layers.forEach(function (layer) {
         // Get Artboards
@@ -1088,6 +1091,12 @@ function syncAllArtboards(context) {
           syncArtboard(layer, userOptions);
         }
       });
+
+      if (currentPage === document.pages.length) {
+        sketch.UI.message('Sync finished');
+      } else {
+        ++currentPage;
+      }
     });
   }
 }
@@ -1139,6 +1148,9 @@ function syncArtboard(artboard, options) {
     return res.json();
   }).then(function (data) {
     syncLayerValue(artboard, data, commonData, options);
+  }).then(function () {
+    sketch.UI.message('Sync finished!');
+    log('DONE');
   }).catch(function (error) {
     if (error.response) {
       console.log(error.response.data);

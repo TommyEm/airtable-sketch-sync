@@ -4,7 +4,7 @@ const { SymbolMaster } = require('sketch/dom');
 const { pluginSettings } = require('./settings');
 const { bases } = require('./secret');
 const { getUserOptions } = require('./lib/alert');
-const { 
+const {
 	getDefaultOptions,
 	baseNames,
 	langs,
@@ -18,7 +18,7 @@ const defaultOptions = getDefaultOptions();
 
 export function syncAllArtboards(context) {
 	log('Sync all artboards on page');
-	
+
 	// Get user options from modal
 	const userOptions = getUserOptions(defaultOptions, baseNames, langs);
 
@@ -29,7 +29,7 @@ export function syncAllArtboards(context) {
 		// Get Pages
 		document.pages.forEach(page => {
 			page.layers.forEach(layer => {
-				
+
 				// Get Artboards
 				if (layer.type === 'Artboard') {
 					syncArtboard(layer, userOptions);
@@ -62,21 +62,22 @@ export function syncSelectedArtboards(context) {
 			if (layer.type === 'Artboard') {
 				log('Artboard');
 				syncArtboard(layer, userOptions);
-				
+
 			} else {
 				log(layer.name);
 
 			}
 
 		});
+		sketch.UI.message('Sync finished!');
 	}
 }
 
 
 /**
  * Sync a single artboard
- * @param {object} artboard 
- * @param {object} options 
+ * @param {object} artboard
+ * @param {object} options
  */
 function syncArtboard(artboard, options) {
 	const table = artboard.name;
@@ -124,7 +125,6 @@ function syncArtboard(artboard, options) {
 			syncLayerValue(artboard, data, commonData, options);
 		})
 		.then(() => {
-			sketch.UI.message('Sync finished!');
 			log('DONE');
 		})
 		.catch((error) => {
@@ -143,7 +143,7 @@ function syncArtboard(artboard, options) {
 
 /**
  * Sync a single layer upon his type
- * 
+ *
  * parentLayers stucture:
  * - Symbol
  *   - overrides
@@ -154,9 +154,9 @@ function syncArtboard(artboard, options) {
  *            - name
  * 			  - type
  *       }
- * @param {object} parentLayers 
- * @param {object} data 
- * @param {object} options 
+ * @param {object} parentLayers
+ * @param {object} data
+ * @param {object} options
  */
 function syncLayerValue(parentLayers, data, commonData, options) {
 	parentLayers.layers.forEach(layer => {
@@ -173,7 +173,7 @@ function syncLayerValue(parentLayers, data, commonData, options) {
 			layer.overrides.forEach(override => {
 				// To Debug
 				// if (
-				// 	override.affectedLayer.name.match(/Label/) 
+				// 	override.affectedLayer.name.match(/Label/)
 				// 	&& layer.name === 'Drop Zone'
 				// ) {
 				// 	log(layer.name);
@@ -187,7 +187,7 @@ function syncLayerValue(parentLayers, data, commonData, options) {
 				) {
 					const idHierarchy = override.path.split('/');
 					let overrideNameHierarchy = [symbolName];
-					
+
 					idHierarchy.forEach(id => {
 						let overrideName;
 						let overrideNameFromPath = document.getLayerWithID(id);
@@ -200,7 +200,7 @@ function syncLayerValue(parentLayers, data, commonData, options) {
 						} else {
 							overrideName = removeEmojis(overrideNameFromPath.name);
 						}
-							
+
 						overrideNameHierarchy.push(overrideName);
 
 					});
@@ -213,7 +213,7 @@ function syncLayerValue(parentLayers, data, commonData, options) {
 					updateLayerValue(commonData, override, layerName, options, overrideFullName);
 					updateLayerValue(data, override, layerName, options, overrideFullName);
 				}
-					
+
 			});
 
 		} else if (layer.type === 'Text') {
@@ -229,26 +229,26 @@ function syncLayerValue(parentLayers, data, commonData, options) {
 
 /**
  * Sync a layer content with Airtable
- * @param {object} data 
- * @param {object} layer 
- * @param {string} layerName 
- * @param {object} options 
+ * @param {object} data
+ * @param {object} layer
+ * @param {string} layerName
+ * @param {object} options
  */
 function updateLayerValue(data, layer, layerName, options, symbolName) {
-	data.records.reverse().map((record) => {
+	data.records.reverse().map(record => {
 		const recordName = record.fields.Name;
 		let recordNames = [];
-		
+
 		// Support for emojis in layer names
 		// They will be ignored
 		let cleanLayerName = removeEmojis(layerName);
-		
+
 
 		// Check symbol with nested overrides. Record names must use a / (forward slash) for this.
 		// Template: "Symbol Name / Override Name"
 
-		// if (symbolName && 
-		// 	recordName.match(symbolName) && 
+		// if (symbolName &&
+		// 	recordName.match(symbolName) &&
 		// 	recordName.match(/\//)
 		// ) {
 		// 	const names = recordName.split('/');
@@ -272,9 +272,9 @@ function updateLayerValue(data, layer, layerName, options, symbolName) {
 				}
 			}
 
-		} else if ( 
+		} else if (
 		// Here we inject the value from Airtable into the Sketch layer
-			recordName === cleanLayerName || 
+			recordName === cleanLayerName ||
 			recordNames[1] === cleanLayerName
 		) {
 			const currentCellData = record.fields[options.lang];
@@ -311,8 +311,8 @@ function getForeignLayerNameWithID(layerID, masters) {
 			}
 			return layer.objectID() == layerID;
 		});
-		if (match) { 
-			break; 
+		if (match) {
+			break;
 		}
 	}
 	return layerName;

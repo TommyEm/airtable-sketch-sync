@@ -962,8 +962,9 @@ function getApiEndpoint(base, table, maxRecords, view, APIKey) {
   return encodeURI("https://api.airtable.com/v0/".concat(base, "/").concat(table, "?maxRecords=").concat(maxRecords, "&view=").concat(view, "&api_key=").concat(APIKey));
 }
 /**
- * 
- * @param {string} string 
+ * Support for emojis in layer names (they will be ignored)
+ * @param {string} string
+ * @returns {string}
  */
 
 function removeEmojis(string) {
@@ -1148,7 +1149,7 @@ function syncArtboard(artboard, options) {
   fetch(apiEndpoint).then(function (res) {
     return res.json();
   }).then(function (data) {
-    syncLayerValue(artboard, data, commonData, options);
+    syncLayer(artboard, data, commonData, options, []);
   }).then(function () {
     log('DONE');
   }).catch(function (error) {
@@ -1179,60 +1180,35 @@ function syncArtboard(artboard, options) {
  *       }
  * @param {object} parentLayers
  * @param {object} data
+ * @param {object} commonData
  * @param {object} options
+ * @param {array} layersHierarchy
  */
 
 
-function syncLayerValue(parentLayers, data, commonData, options) {
+function syncLayer(parentLayers, data, commonData, options, layersHierarchy) {
   parentLayers.layers.forEach(function (layer) {
-    var layerName;
-
     if (layer.type === 'SymbolInstance') {
-      var symbolName = layer.name; // log(symbolName);
-      // log(layer.overrides);
-      // log(layer);
-      // syncLayerValue(layer, data, commonData, options);
-
+      var symbolName = layer.name;
       layer.overrides.forEach(function (override) {
-        // To Debug
-        // if (
-        // 	override.affectedLayer.name.match(/Label/)
-        // 	&& layer.name === 'Drop Zone'
-        // ) {
-        // 	log(layer.name);
-        // 	log(override.affectedLayer.id);
-        // 	log(getForeignLayerNameWithID(override.affectedLayer.id, foreignSymbolMasters));
-        // }
         if (override.affectedLayer.type === 'SymbolInstance' || override.affectedLayer.type === 'Text') {
-          var idHierarchy = override.path.split('/');
-          var overrideNameHierarchy = [symbolName];
-          idHierarchy.forEach(function (id) {
-            var overrideName;
-            var overrideNameFromPath = document.getLayerWithID(id);
+          // We need to get the full and clean name of the override
+          var overrideFullName = getOverrideFullName(symbolName, override);
+          var layerName = removeEmojis(override.affectedLayer.name); // Update values from Global Template
 
-            if (overrideNameFromPath === undefined) {
-              // If it's undefined, the layer comes from a library, we need a special treatment to retrieve it
-              overrideName = getForeignLayerNameWithID(id, foreignSymbolMasters);
-              overrideName = overrideName ? removeEmojis(overrideName) : undefined;
-            } else {
-              overrideName = removeEmojis(overrideNameFromPath.name);
-            }
+          updateLayerValue(commonData, override, layerName, options, layersHierarchy, overrideFullName); // Update screen-specific values
 
-            overrideNameHierarchy.push(overrideName);
-          });
-          var overrideFullName = overrideNameHierarchy.join(' / ');
-          layerName = override.affectedLayer.name; // log(layerName);
-          // log(overrideFullName);
-
-          updateLayerValue(commonData, override, layerName, options, overrideFullName);
-          updateLayerValue(data, override, layerName, options, overrideFullName);
+          updateLayerValue(data, override, layerName, options, layersHierarchy, overrideFullName);
         }
       });
     } else if (layer.type === 'Text') {
-      layerName = layer.name;
-      updateLayerValue(data, layer, layerName, options);
+      var layerName = removeEmojis(layer.name);
+      var layerFullPath = layersHierarchy ? layersHierarchy.join(' / ') : null;
+      updateLayerValue(data, layer, layerName, options, layerFullPath);
     } else if (layer.type === 'Group') {
-      syncLayerValue(layer, data, commonData, options);
+      var parentName = parentLayers.name;
+      layersHierarchy.push(parentName);
+      syncLayer(layer, data, commonData, options, layersHierarchy);
     }
   });
 }
@@ -1242,24 +1218,18 @@ function syncLayerValue(parentLayers, data, commonData, options) {
  * @param {object} layer
  * @param {string} layerName
  * @param {object} options
+ * @param {string} layerFullPath
+ * @param {string} symbolName
  */
 
 
-function updateLayerValue(data, layer, layerName, options, symbolName) {
+function updateLayerValue(data, layer, layerName, options, layerFullPath, symbolName) {
+  var lang = options.lang; // Language selected
+
   data.records.reverse().map(function (record) {
     var recordName = record.fields.Name;
-    var recordNames = []; // Support for emojis in layer names
-    // They will be ignored
-
-    var cleanLayerName = removeEmojis(layerName); // Check symbol with nested overrides. Record names must use a / (forward slash) for this.
+    var recordNames = []; // Check symbol with nested overrides. Record names must use a / (forward slash) for this.
     // Template: "Symbol Name / Override Name"
-    // if (symbolName &&
-    // 	recordName.match(symbolName) &&
-    // 	recordName.match(/\//)
-    // ) {
-    // 	const names = recordName.split('/');
-    // 	recordNames = names.map(name => name.trim());
-    // }
 
     if (symbolName) {
       var names = recordName.split('/');
@@ -1269,30 +1239,66 @@ function updateLayerValue(data, layer, layerName, options, symbolName) {
       var reg = new RegExp(recordNames.join('.*'), 'i');
 
       if (symbolName.match(reg) && layer) {
-        var currentCellData = record.fields[options.lang];
+        injectValue(record, layer, lang);
+      } // TODO: Not working. Need to check first if there is a path ('/') and then check if the record regexp matches the path
 
-        var _data = currentCellData ? currentCellData : ' ';
+    } else if (layerFullPath) {
+      var _names = recordName.split('/');
 
-        if (layer.value) {
-          layer.value = _data;
-        } else if (layer.text) {
-          layer.text = _data;
-        }
-      }
-    } else if ( // Here we inject the value from Airtable into the Sketch layer
-    recordName === cleanLayerName || recordNames[1] === cleanLayerName) {
-      var _currentCellData = record.fields[options.lang];
+      recordNames = _names.map(function (name) {
+        return name.trim();
+      }); // const testReg = new RegExp(names[0], 'i');
+      // console.log(testReg);
+      // const layerNames = layerFullPath.split('/');
+      // const layerReg = new RegExp(layerNames.join('.*'), 'i');
+      // log('layer');
+      // log(layerFullPath);
+      // log('record');
+      // log(recordName);
+      // if (recordName.match(layerReg)) {
+      // 	console.log(recordName);
+      // }
 
-      var _data2 = _currentCellData ? _currentCellData : ' ';
+      var _reg = new RegExp(recordNames.join('.*'), 'i');
 
-      if (layer.value) {
-        layer.value = _data2;
-      } else if (layer.text) {
-        layer.text = _data2;
-      }
+      var pathFullName = layerFullPath + ' / ' + layerName;
+
+      if (pathFullName.match(_reg) && layer) {
+        // log('pathFullName');
+        // log(pathFullName);
+        // log('recordName');
+        // log(recordName);
+        injectValue(record, layer, lang);
+      } // Here we inject the value from Airtable into the Sketch layer
+
+    } else if (recordName === layerName || recordNames[1] === layerName) {
+      injectValue(record, layer, lang);
     }
   });
 }
+/**
+ * Inject value from Airtable record into Sketch layer
+ * @param {object} record 
+ * @param {object} layer
+ */
+
+
+function injectValue(record, layer, lang) {
+  var currentCellData = record.fields[lang];
+  var data = currentCellData ? currentCellData : ' ';
+
+  if (layer.value) {
+    layer.value = data;
+  } else if (layer.text) {
+    layer.text = data;
+  }
+}
+/**
+ * Get library master symbols from local instances
+ * @param {object} document
+ * @returns {object}
+ */
+
 
 function getForeignSymbolMasters(document) {
   var foreignSymbolList = document.sketchObject.documentData().foreignSymbols();
@@ -1302,6 +1308,13 @@ function getForeignSymbolMasters(document) {
   });
   return symbolMasters;
 }
+/**
+ * Get the name of layer from a library symbol
+ * @param {string} layerID 
+ * @param {object} masters
+ * @returns {string}
+ */
+
 
 function getForeignLayerNameWithID(layerID, masters) {
   var match;
@@ -1332,6 +1345,33 @@ function getForeignLayerNameWithID(layerID, masters) {
   }
 
   return layerName;
+}
+/**
+ * Get the full and clean name of an override. Supports local and library symbols
+ * @param {string} symbolName 
+ * @param {object} override
+ * @returns {string}
+ */
+
+
+function getOverrideFullName(symbolName, override) {
+  var idHierarchy = override.path.split('/');
+  var overrideNameHierarchy = [symbolName];
+  idHierarchy.forEach(function (id) {
+    var overrideName;
+    var overrideNameFromPath = document.getLayerWithID(id);
+
+    if (overrideNameFromPath === undefined) {
+      // If it's undefined, the layer comes from a library, we need a special treatment to retrieve it
+      overrideName = getForeignLayerNameWithID(id, foreignSymbolMasters);
+      overrideName = overrideName ? removeEmojis(overrideName) : undefined;
+    } else {
+      overrideName = removeEmojis(overrideNameFromPath.name);
+    }
+
+    overrideNameHierarchy.push(overrideName);
+  });
+  return overrideNameHierarchy.join(' / ');
 }
 /* WEBPACK VAR INJECTION */}.call(this, __webpack_require__(/*! ./node_modules/sketch-polyfill-fetch/lib/index.js */ "./node_modules/sketch-polyfill-fetch/lib/index.js")))
 

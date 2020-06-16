@@ -962,8 +962,9 @@ function getApiEndpoint(base, table, maxRecords, view, APIKey) {
   return encodeURI("https://api.airtable.com/v0/".concat(base, "/").concat(table, "?maxRecords=").concat(maxRecords, "&view=").concat(view, "&api_key=").concat(APIKey));
 }
 /**
- * 
- * @param {string} string 
+ * Support for emojis in layer names (they will be ignored)
+ * @param {string} string
+ * @returns {string}
  */
 
 function removeEmojis(string) {

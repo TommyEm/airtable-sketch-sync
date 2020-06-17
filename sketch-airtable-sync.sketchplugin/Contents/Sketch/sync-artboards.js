@@ -1247,7 +1247,34 @@ function updateLayerValue(data, layer, layerName, options, layerFullPath, symbol
 
       recordNames = _names.map(function (name) {
         return name.trim();
-      }); // const testReg = new RegExp(names[0], 'i');
+      });
+
+      var _reg = new RegExp(recordNames.join('.*'), 'i');
+
+      var pathFullName = layerFullPath + ' / ' + layerName; // Start by filtering nested record names
+
+      if (recordName.match(/\//)) {
+        if (layerFullPath.match(recordNames[0])) {
+          console.log('layerFullPath', layerFullPath);
+          console.log('recordName', recordNames[0]);
+
+          if (pathFullName.match(_reg)) {
+            // log('Match');
+            console.log('Match', pathFullName);
+            injectValue(record, layer, lang);
+          }
+        } // Then check non-nested records
+
+      } else if (recordName === layerName) {} // injectValue(record, layer, lang);
+      // layerFullPath.match(/\//)
+      // 	if (pathFullName.match(reg)) {
+      // 		log('Nested');
+      // 		log(pathFullName);
+      // 		log(recordName);
+      // 		injectValue(record, layer, lang);
+      // 	}
+      // }
+      // const testReg = new RegExp(names[0], 'i');
       // console.log(testReg);
       // const layerNames = layerFullPath.split('/');
       // const layerReg = new RegExp(layerNames.join('.*'), 'i');
@@ -1258,21 +1285,16 @@ function updateLayerValue(data, layer, layerName, options, layerFullPath, symbol
       // if (recordName.match(layerReg)) {
       // 	console.log(recordName);
       // }
+      // const reg = new RegExp(recordNames.join('.*'), 'i');
+      // const pathFullName = layerFullPath + ' / ' + layerName;
+      // if (pathFullName.match(reg) && layer) {
+      // 	// log('pathFullName');
+      // 	// log(pathFullName);
+      // 	// log('recordName');
+      // 	// log(recordName);
+      // 	injectValue(record, layer, lang);
+      // }
 
-      var _reg = new RegExp(recordNames.join('.*'), 'i');
-
-      var pathFullName = layerFullPath + ' / ' + layerName;
-
-      if (pathFullName.match(_reg) && layer) {
-        // log('pathFullName');
-        // log(pathFullName);
-        // log('recordName');
-        // log(recordName);
-        injectValue(record, layer, lang);
-      } // Here we inject the value from Airtable into the Sketch layer
-
-    } else if (recordName === layerName || recordNames[1] === layerName) {
-      injectValue(record, layer, lang);
     }
   });
 }

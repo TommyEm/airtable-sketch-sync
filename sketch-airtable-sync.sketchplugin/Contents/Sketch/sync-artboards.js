@@ -1046,7 +1046,15 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "syncSelectedArtboards", function() { return syncSelectedArtboards; });
 function _createForOfIteratorHelper(o) { if (typeof Symbol === "undefined" || o[Symbol.iterator] == null) { if (Array.isArray(o) || (o = _unsupportedIterableToArray(o))) { var i = 0; var F = function F() {}; return { s: F, n: function n() { if (i >= o.length) return { done: true }; return { done: false, value: o[i++] }; }, e: function e(_e) { throw _e; }, f: F }; } throw new TypeError("Invalid attempt to iterate non-iterable instance.\nIn order to be iterable, non-array objects must have a [Symbol.iterator]() method."); } var it, normalCompletion = true, didErr = false, err; return { s: function s() { it = o[Symbol.iterator](); }, n: function n() { var step = it.next(); normalCompletion = step.done; return step; }, e: function e(_e2) { didErr = true; err = _e2; }, f: function f() { try { if (!normalCompletion && it.return != null) it.return(); } finally { if (didErr) throw err; } } }; }
 
+function _toConsumableArray(arr) { return _arrayWithoutHoles(arr) || _iterableToArray(arr) || _unsupportedIterableToArray(arr) || _nonIterableSpread(); }
+
+function _nonIterableSpread() { throw new TypeError("Invalid attempt to spread non-iterable instance.\nIn order to be iterable, non-array objects must have a [Symbol.iterator]() method."); }
+
 function _unsupportedIterableToArray(o, minLen) { if (!o) return; if (typeof o === "string") return _arrayLikeToArray(o, minLen); var n = Object.prototype.toString.call(o).slice(8, -1); if (n === "Object" && o.constructor) n = o.constructor.name; if (n === "Map" || n === "Set") return Array.from(n); if (n === "Arguments" || /^(?:Ui|I)nt(?:8|16|32)(?:Clamped)?Array$/.test(n)) return _arrayLikeToArray(o, minLen); }
+
+function _iterableToArray(iter) { if (typeof Symbol !== "undefined" && Symbol.iterator in Object(iter)) return Array.from(iter); }
+
+function _arrayWithoutHoles(arr) { if (Array.isArray(arr)) return _arrayLikeToArray(arr); }
 
 function _arrayLikeToArray(arr, len) { if (len == null || len > arr.length) len = arr.length; for (var i = 0, arr2 = new Array(len); i < len; i++) { arr2[i] = arr[i]; } return arr2; }
 
@@ -1149,7 +1157,8 @@ function syncArtboard(artboard, options) {
   fetch(apiEndpoint).then(function (res) {
     return res.json();
   }).then(function (data) {
-    syncLayer(artboard, data, commonData, options, []);
+    syncLayer(artboard, commonData, options, []);
+    syncLayer(artboard, data, options, []);
   }).then(function () {
     log('DONE');
   }).catch(function (error) {
@@ -1168,7 +1177,7 @@ function syncArtboard(artboard, options) {
 /**
  * Sync a single layer upon his type
  *
- * parentLayers stucture:
+ * Symbols parentLayers stucture:
  * - Symbol
  *   - overrides
  *     - {
@@ -1186,29 +1195,44 @@ function syncArtboard(artboard, options) {
  */
 
 
-function syncLayer(parentLayers, data, commonData, options, layersHierarchy) {
+function syncLayer(parentLayers, data, options, layersHierarchy) {
   parentLayers.layers.forEach(function (layer) {
-    if (layer.type === 'SymbolInstance') {
-      var symbolName = layer.name;
-      layer.overrides.forEach(function (override) {
-        if (override.affectedLayer.type === 'SymbolInstance' || override.affectedLayer.type === 'Text') {
-          // We need to get the full and clean name of the override
-          var overrideFullName = getOverrideFullName(symbolName, override);
-          var layerName = removeEmojis(override.affectedLayer.name); // Update values from Global Template
+    if (layer.hidden === false) {
+      // We don't sync hidden layers
+      switch (layer.type) {
+        case 'SymbolInstance':
+          var symbolName = layer.name;
+          layer.overrides.forEach(function (override) {
+            if (override.affectedLayer.type === 'SymbolInstance' || override.affectedLayer.type === 'Text') {
+              // We need to get the full and clean name of the override
+              var _layerFullPath = layersHierarchy.join(' / ');
 
-          updateLayerValue(commonData, override, layerName, options, layersHierarchy, overrideFullName); // Update screen-specific values
+              var overrideFullName = getOverrideFullName(symbolName, override);
 
-          updateLayerValue(data, override, layerName, options, layersHierarchy, overrideFullName);
-        }
-      });
-    } else if (layer.type === 'Text') {
-      var layerName = removeEmojis(layer.name);
-      var layerFullPath = layersHierarchy ? layersHierarchy.join(' / ') : null;
-      updateLayerValue(data, layer, layerName, options, layerFullPath);
-    } else if (layer.type === 'Group') {
-      var parentName = parentLayers.name;
-      layersHierarchy.push(parentName);
-      syncLayer(layer, data, commonData, options, layersHierarchy);
+              var _layerName = removeEmojis(override.affectedLayer.name); // Update values
+
+
+              updateLayerValue(data, override, _layerName, options, _layerFullPath, overrideFullName);
+            }
+          });
+          break;
+
+        case 'Text':
+          var layerName = removeEmojis(layer.name);
+          var layerFullPath = layersHierarchy.join(' / ');
+          updateLayerValue(data, layer, layerName, options, layerFullPath);
+          break;
+
+        case 'Group':
+          var newLayersHierarchy = _toConsumableArray(layersHierarchy);
+
+          newLayersHierarchy.push(layer.name);
+          syncLayer(layer, data, options, newLayersHierarchy);
+          break;
+
+        default:
+          break;
+      }
     }
   });
 }
@@ -1228,79 +1252,36 @@ function updateLayerValue(data, layer, layerName, options, layerFullPath, symbol
 
   data.records.reverse().map(function (record) {
     var recordName = record.fields.Name;
-    var recordNames = []; // Check symbol with nested overrides. Record names must use a / (forward slash) for this.
+    var names = recordName.split('/');
+    var recordNames = [];
+    recordNames = names.map(function (name) {
+      return name.trim();
+    });
+    var reg = new RegExp(recordNames.join('.*'), 'i'); // Check symbol with nested overrides. Record names must use a / (forward slash) for this.
     // Template: "Symbol Name / Override Name"
 
     if (symbolName) {
-      var names = recordName.split('/');
-      recordNames = names.map(function (name) {
-        return name.trim();
-      });
-      var reg = new RegExp(recordNames.join('.*'), 'i');
+      var fullName = layerFullPath + ' / ' + symbolName;
 
-      if (symbolName.match(reg) && layer) {
+      if (fullName.match(recordNames[0]) && fullName.match(reg)) {
         injectValue(record, layer, lang);
-      } // TODO: Not working. Need to check first if there is a path ('/') and then check if the record regexp matches the path
+      } // Check nested and non-nested layers
 
-    } else if (layerFullPath) {
-      var _names = recordName.split('/');
+    } else {
+      var _fullName = layerFullPath + ' / ' + layerName; // Start by filtering nested record names
 
-      recordNames = _names.map(function (name) {
-        return name.trim();
-      });
 
-      var _reg = new RegExp(recordNames.join('.*'), 'i');
-
-      var pathFullName = layerFullPath + ' / ' + layerName; // Start by filtering nested record names
-
-      if (recordName.match(/\//)) {
-        if (layerFullPath.match(recordNames[0])) {
-          console.log('layerFullPath', layerFullPath);
-          console.log('recordName', recordNames[0]);
-
-          if (pathFullName.match(_reg)) {
-            // log('Match');
-            console.log('Match', pathFullName);
-            injectValue(record, layer, lang);
-          }
-        } // Then check non-nested records
-
-      } else if (recordName === layerName) {} // injectValue(record, layer, lang);
-      // layerFullPath.match(/\//)
-      // 	if (pathFullName.match(reg)) {
-      // 		log('Nested');
-      // 		log(pathFullName);
-      // 		log(recordName);
-      // 		injectValue(record, layer, lang);
-      // 	}
-      // }
-      // const testReg = new RegExp(names[0], 'i');
-      // console.log(testReg);
-      // const layerNames = layerFullPath.split('/');
-      // const layerReg = new RegExp(layerNames.join('.*'), 'i');
-      // log('layer');
-      // log(layerFullPath);
-      // log('record');
-      // log(recordName);
-      // if (recordName.match(layerReg)) {
-      // 	console.log(recordName);
-      // }
-      // const reg = new RegExp(recordNames.join('.*'), 'i');
-      // const pathFullName = layerFullPath + ' / ' + layerName;
-      // if (pathFullName.match(reg) && layer) {
-      // 	// log('pathFullName');
-      // 	// log(pathFullName);
-      // 	// log('recordName');
-      // 	// log(recordName);
-      // 	injectValue(record, layer, lang);
-      // }
-
+      if (recordName.match(/\//) && layerFullPath.match(recordNames[0]) && _fullName.match(reg)) {
+        injectValue(record, layer, lang); // Then check non-nested records
+      } else if (recordName === layerName && !layerFullPath.match(/\//)) {
+        injectValue(record, layer, lang);
+      }
     }
   });
 }
 /**
  * Inject value from Airtable record into Sketch layer
- * @param {object} record 
+ * @param {object} record
  * @param {object} layer
  */
 
@@ -1309,10 +1290,12 @@ function injectValue(record, layer, lang) {
   var currentCellData = record.fields[lang];
   var data = currentCellData ? currentCellData : ' ';
 
-  if (layer.value) {
-    layer.value = data;
-  } else if (layer.text) {
-    layer.text = data;
+  if (!layer.hidden) {
+    if (layer.value) {
+      layer.value = data;
+    } else if (layer.text) {
+      layer.text = data;
+    }
   }
 }
 /**
@@ -1332,7 +1315,7 @@ function getForeignSymbolMasters(document) {
 }
 /**
  * Get the name of layer from a library symbol
- * @param {string} layerID 
+ * @param {string} layerID
  * @param {object} masters
  * @returns {string}
  */
@@ -1370,7 +1353,7 @@ function getForeignLayerNameWithID(layerID, masters) {
 }
 /**
  * Get the full and clean name of an override. Supports local and library symbols
- * @param {string} symbolName 
+ * @param {string} symbolName
  * @param {object} override
  * @returns {string}
  */

@@ -110,34 +110,37 @@ function syncArtboard(artboard, options) {
 		});
 
 
-	const apiEndpoint = getApiEndpoint(
-		base,
-		table,
-		options.maxRecords,
-		options.view,
-		pluginSettings.APIKey,
-	);
+	setTimeout(() => {
+		const apiEndpoint = getApiEndpoint(
+			base,
+			table,
+			options.maxRecords,
+			options.view,
+			pluginSettings.APIKey,
+		);
+	
+		fetch(apiEndpoint)
+			.then((res) => res.json())
+			.then((data) => {
+				syncLayer(artboard, commonData, options, []);
+				syncLayer(artboard, data, options, []);
+			})
+			.then(() => {
+				log('DONE');
+			})
+			.catch((error) => {
+				if (error.response) {
+					console.log(error.response.data);
+				} else if (error.request) {
+					console.log(error.request);
+				} else {
+					// Something happened in setting up the request that triggered an Error
+					console.log('Error', error.message);
+				}
+				console.log(error.config);
+			});
 
-	fetch(apiEndpoint)
-		.then((res) => res.json())
-		.then((data) => {
-			syncLayer(artboard, commonData, options, []);
-			syncLayer(artboard, data, options, []);
-		})
-		.then(() => {
-			log('DONE');
-		})
-		.catch((error) => {
-			if (error.response) {
-				console.log(error.response.data);
-			} else if (error.request) {
-				console.log(error.request);
-			} else {
-				// Something happened in setting up the request that triggered an Error
-				console.log('Error', error.message);
-			}
-			console.log(error.config);
-		});
+	}, 1050);
 }
 
 

@@ -1042,7 +1042,7 @@ if (pluginSettings) {
 
 "use strict";
 __webpack_require__.r(__webpack_exports__);
-/* WEBPACK VAR INJECTION */(function(fetch) {/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "syncAllArtboards", function() { return syncAllArtboards; });
+/* WEBPACK VAR INJECTION */(function(fetch, setTimeout) {/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "syncAllArtboards", function() { return syncAllArtboards; });
 /* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "syncSelectedArtboards", function() { return syncSelectedArtboards; });
 function _createForOfIteratorHelper(o) { if (typeof Symbol === "undefined" || o[Symbol.iterator] == null) { if (Array.isArray(o) || (o = _unsupportedIterableToArray(o))) { var i = 0; var F = function F() {}; return { s: F, n: function n() { if (i >= o.length) return { done: true }; return { done: false, value: o[i++] }; }, e: function e(_e) { throw _e; }, f: F }; } throw new TypeError("Invalid attempt to iterate non-iterable instance.\nIn order to be iterable, non-array objects must have a [Symbol.iterator]() method."); } var it, normalCompletion = true, didErr = false, err; return { s: function s() { it = o[Symbol.iterator](); }, n: function n() { var step = it.next(); normalCompletion = step.done; return step; }, e: function e(_e2) { didErr = true; err = _e2; }, f: function f() { try { if (!normalCompletion && it.return != null) it.return(); } finally { if (didErr) throw err; } } }; }
 
@@ -1153,26 +1153,28 @@ function syncArtboard(artboard, options) {
 
     console.log(error.config);
   });
-  var apiEndpoint = getApiEndpoint(base, table, options.maxRecords, options.view, pluginSettings.APIKey);
-  fetch(apiEndpoint).then(function (res) {
-    return res.json();
-  }).then(function (data) {
-    syncLayer(artboard, commonData, options, []);
-    syncLayer(artboard, data, options, []);
-  }).then(function () {
-    log('DONE');
-  }).catch(function (error) {
-    if (error.response) {
-      console.log(error.response.data);
-    } else if (error.request) {
-      console.log(error.request);
-    } else {
-      // Something happened in setting up the request that triggered an Error
-      console.log('Error', error.message);
-    }
+  setTimeout(function () {
+    var apiEndpoint = getApiEndpoint(base, table, options.maxRecords, options.view, pluginSettings.APIKey);
+    fetch(apiEndpoint).then(function (res) {
+      return res.json();
+    }).then(function (data) {
+      syncLayer(artboard, commonData, options, []);
+      syncLayer(artboard, data, options, []);
+    }).then(function () {
+      log('DONE');
+    }).catch(function (error) {
+      if (error.response) {
+        console.log(error.response.data);
+      } else if (error.request) {
+        console.log(error.request);
+      } else {
+        // Something happened in setting up the request that triggered an Error
+        console.log('Error', error.message);
+      }
 
-    console.log(error.config);
-  });
+      console.log(error.config);
+    });
+  }, 1050);
 }
 /**
  * Sync a single layer upon his type
@@ -1378,7 +1380,7 @@ function getOverrideFullName(symbolName, override) {
   });
   return overrideNameHierarchy.join(' / ');
 }
-/* WEBPACK VAR INJECTION */}.call(this, __webpack_require__(/*! ./node_modules/sketch-polyfill-fetch/lib/index.js */ "./node_modules/sketch-polyfill-fetch/lib/index.js")))
+/* WEBPACK VAR INJECTION */}.call(this, __webpack_require__(/*! ./node_modules/sketch-polyfill-fetch/lib/index.js */ "./node_modules/sketch-polyfill-fetch/lib/index.js"), __webpack_require__(/*! ./node_modules/@skpm/timers/timeout.js */ "./node_modules/@skpm/timers/timeout.js")["setTimeout"]))
 
 /***/ }),
 

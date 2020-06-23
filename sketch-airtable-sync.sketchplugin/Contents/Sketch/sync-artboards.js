@@ -1291,6 +1291,7 @@ function updateLayerValue(data, layer, layerName, options, layerFullPath, symbol
 function injectValue(record, layer, lang) {
   var currentCellData = record.fields[lang];
   var data = currentCellData ? currentCellData : ' ';
+  console.log(data);
 
   if (!layer.hidden) {
     if (layer.value) {
@@ -1379,6 +1380,25 @@ function getOverrideFullName(symbolName, override) {
     overrideNameHierarchy.push(overrideName);
   });
   return overrideNameHierarchy.join(' / ');
+}
+
+function insertNestedTextStyles() {
+  var text = document.selectedLayers.layers[0];
+  var attrStr = text.sketchObject.attributedStringValue();
+  var limitRange = NSMakeRange(0, attrStr.length());
+  var effectiveRange = MOPointer.alloc().init();
+  var fonts = [];
+
+  while (limitRange.length > 0) {
+    console.log(NSFontAttributeName);
+    console.log(limitRange.location);
+    fonts.push(attrStr.attribute_atIndex_longestEffectiveRange_inRange(NSFontAttributeName, limitRange.location, effectiveRange, limitRange));
+    console.log(effectiveRange.value());
+    console.log(limitRange);
+    limitRange = NSMakeRange(NSMaxRange(effectiveRange.value()), NSMaxRange(limitRange) - NSMaxRange(effectiveRange.value()));
+  }
+
+  console.log(fonts);
 }
 /* WEBPACK VAR INJECTION */}.call(this, __webpack_require__(/*! ./node_modules/sketch-polyfill-fetch/lib/index.js */ "./node_modules/sketch-polyfill-fetch/lib/index.js"), __webpack_require__(/*! ./node_modules/@skpm/timers/timeout.js */ "./node_modules/@skpm/timers/timeout.js")["setTimeout"]))
 

@@ -118,7 +118,7 @@ function syncArtboard(artboard, options) {
 			options.view,
 			pluginSettings.APIKey,
 		);
-	
+
 		fetch(apiEndpoint)
 			.then((res) => res.json())
 			.then((data) => {
@@ -276,6 +276,8 @@ function updateLayerValue(data, layer, layerName, options, layerFullPath, symbol
 function injectValue(record, layer, lang) {
 	const currentCellData = record.fields[lang];
 	const data = currentCellData ? currentCellData : ' ';
+	console.log(data);
+
 
 	if (!layer.hidden) {
 		if (layer.value) {
@@ -356,4 +358,39 @@ function getOverrideFullName(symbolName, override) {
 	});
 
 	return overrideNameHierarchy.join(' / ');
+}
+
+
+
+function insertNestedTextStyles() {
+
+	let text = document.selectedLayers.layers[0];
+	const attrStr = text.sketchObject.attributedStringValue();
+	let limitRange = NSMakeRange(0, attrStr.length());
+	let effectiveRange = MOPointer.alloc().init();
+
+
+
+	let fonts = [];
+
+	while (limitRange.length > 0) {
+		console.log(NSFontAttributeName);
+		console.log(limitRange.location);
+		fonts.push(attrStr.attribute_atIndex_longestEffectiveRange_inRange(
+			NSFontAttributeName,
+			limitRange.location,
+			effectiveRange,
+			limitRange
+		));
+		console.log(effectiveRange.value());
+		console.log(limitRange);
+		limitRange = NSMakeRange(
+		  NSMaxRange(effectiveRange.value()),
+		  NSMaxRange(limitRange) - NSMaxRange(effectiveRange.value())
+		);
+	  }
+
+
+	console.log(fonts);
+
 }

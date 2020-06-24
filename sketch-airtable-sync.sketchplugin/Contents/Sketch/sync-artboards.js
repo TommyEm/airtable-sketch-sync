@@ -1292,14 +1292,13 @@ function injectValue(record, layer, lang) {
   var currentCellData = record.fields[lang];
   var data = currentCellData ? currentCellData : ' ';
   console.log(data);
-
-  if (!layer.hidden) {
-    if (layer.value) {
-      layer.value = data;
-    } else if (layer.text) {
-      layer.text = data;
-    }
-  }
+  checkForMarkdown(data); // if (!layer.hidden) {
+  // 	if (layer.value) {
+  // 		layer.value = data;
+  // 	} else if (layer.text) {
+  // 		layer.text = data;
+  // 	}
+  // }
 }
 /**
  * Get library master symbols from local instances
@@ -1380,6 +1379,20 @@ function getOverrideFullName(symbolName, override) {
     overrideNameHierarchy.push(overrideName);
   });
   return overrideNameHierarchy.join(' / ');
+}
+
+function checkForMarkdown(data) {
+  var rules = {
+    strong: /(\*\*)(.*)(\*\*)/,
+    italic: /(\*)(.*)(\*)/,
+    strike: /(~~)(.*)(~~)/,
+    code: /(`)(.*)(`)/
+  };
+  Object.keys(rules).forEach(function (rule) {
+    if (data.match(rules[rule])) {
+      console.log(rule);
+    }
+  });
 }
 
 function insertNestedTextStyles() {

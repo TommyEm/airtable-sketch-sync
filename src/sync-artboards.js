@@ -278,15 +278,17 @@ function injectValue(record, layer, lang) {
 	const data = currentCellData ? currentCellData : ' ';
 	console.log(data);
 
+	checkForMarkdown(data);
 
-	if (!layer.hidden) {
-		if (layer.value) {
-			layer.value = data;
 
-		} else if (layer.text) {
-			layer.text = data;
-		}
-	}
+	// if (!layer.hidden) {
+	// 	if (layer.value) {
+	// 		layer.value = data;
+
+	// 	} else if (layer.text) {
+	// 		layer.text = data;
+	// 	}
+	// }
 }
 
 
@@ -358,6 +360,25 @@ function getOverrideFullName(symbolName, override) {
 	});
 
 	return overrideNameHierarchy.join(' / ');
+}
+
+
+
+function checkForMarkdown(data) {
+	const rules = {
+		strong: /(\*\*)(.*)(\*\*)/,
+		italic: /(\*)(.*)(\*)/,
+		strike: /(~~)(.*)(~~)/,
+		code: /(`)(.*)(`)/,
+	}
+
+	Object.keys(rules).forEach(rule => {
+		if (data.match(rules[rule])) {
+			console.log(rule);
+
+		}
+	});
+
 }
 
 

@@ -1084,6 +1084,7 @@ function onShutdown() {
 function onSupplyData(context) {
   var sketchDataKey = context.data.key;
   var items = util.toArray(context.data.items).map(sketch.fromNative);
+  insertNestedTextStyles();
   syncSelectedLayer(sketchDataKey, items);
 }
 function syncSelectedLayer(sketchDataKey, items) {
@@ -1149,6 +1150,30 @@ function syncSelectedLayer(sketchDataKey, items) {
       }
     });
   }
+}
+
+function insertNestedTextStyles() {
+  var text = document.selectedLayers.layers[0];
+  var attrStr = text.sketchObject.attributedStringValue();
+  var limitRange = NSMakeRange(0, attrStr.length());
+  var effectiveRange = MOPointer.alloc().init(); // console.log('text', JSON.stringify(text, null, 2));
+
+  var objDict = attrStr.treeAsDictionary();
+  var jsonData = NSJSONSerialization.dataWithJSONObject_options_error_(objDict, 0, nil);
+  var jsonString = NSString.alloc().initWithData_encoding_(jsonData, NSUTF8StringEncoding);
+  console.log('attrStr', jsonString);
+  var fonts = [];
+
+  while (limitRange.length > 0) {
+    console.log('NSFontAttributeName', NSFontAttributeName);
+    console.log('limitRange.location', limitRange.location);
+    fonts.push(attrStr.attribute_atIndex_longestEffectiveRange_inRange(NSFontAttributeName, limitRange.location, effectiveRange, limitRange));
+    console.log('effectiveRange.value', effectiveRange.value());
+    console.log('limitRange', limitRange);
+    limitRange = NSMakeRange(NSMaxRange(effectiveRange.value()), NSMaxRange(limitRange) - NSMaxRange(effectiveRange.value()));
+  }
+
+  console.log('fonts', fonts);
 }
 
 /***/ }),

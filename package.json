@@ -21,7 +21,9 @@
   },
   "devDependencies": {
     "@skpm/builder": "^0.5.2",
+    "@textlint/markdown-to-ast": "^6.1.7",
     "airtable": "^0.8.1"
   },
-  "author": "Tommy Mabrier <tommy.mabrier@kubity.com>"
+  "author": "Tommy Mabrier <tommy.mabrier@kubity.com>",
+  "dependencies": {}
 }

@@ -10,6 +10,7 @@ const {
 	langs,
 } = require('./defaults');
 const { getApiEndpoint, removeEmojis } = require('./lib/utils');
+const { parse } = require('@textlint/markdown-to-ast');
 
 
 const foreignSymbolMasters = getForeignSymbolMasters(document);
@@ -276,19 +277,22 @@ function updateLayerValue(data, layer, layerName, options, layerFullPath, symbol
 function injectValue(record, layer, lang) {
 	const currentCellData = record.fields[lang];
 	const data = currentCellData ? currentCellData : ' ';
-	console.log(data);
+	// console.log(data);
 
-	checkForMarkdown(data);
+	// const parsedData = checkForMarkdown(data, layer);
 
+	if (!layer.hidden) {
+		if (layer.value) {
+			// layer.value = data;
 
-	// if (!layer.hidden) {
-	// 	if (layer.value) {
-	// 		layer.value = data;
+		} else if (layer.text) {
+			layer.text = data;
+			console.log(layer.sketchObject);
 
-	// 	} else if (layer.text) {
-	// 		layer.text = data;
-	// 	}
-	// }
+			checkForMarkdown(data, layer.sketchObject);
+		}
+	}
+
 }
 
 
@@ -364,20 +368,63 @@ function getOverrideFullName(symbolName, override) {
 
 
 
-function checkForMarkdown(data) {
-	const rules = {
-		strong: /(\*\*)(.*)(\*\*)/,
-		italic: /(\*)(.*)(\*)/,
-		strike: /(~~)(.*)(~~)/,
-		code: /(`)(.*)(`)/,
-	}
+function checkForMarkdown(data, layer) {
 
-	Object.keys(rules).forEach(rule => {
-		if (data.match(rules[rule])) {
-			console.log(rule);
+	const ast = parse(data);
+	const paragraphs = ast.children;
 
+
+	// paragraphs.forEach(paragraph => { });
+
+	// console.log('RAW', paragraphs[0].raw);
+
+	// let attributedString = NSMutableAttributedString.new().initWithString(paragraphs[0].raw);
+
+	const baseFont = layer.font();
+
+	paragraphs[0].children.forEach(text => {
+		switch (text.type) {
+			// case 'Str':
+			// 	sketchParsedText.push(text.value);
+			// 	break;
+
+			case 'Strong':
+				const boldFont = NSFontManager.sharedFontManager().convertFont_toHaveTrait(baseFont, NSBoldFontMask);
+				const boldRange = NSMakeRange(text.loc.start.column, text.loc.end.column);
+
+				layer.addAttribute_value_forRange(NSFontAttributeName, boldFont, boldRange);
+				break;
+
+			case 'Emphasis':
+				const emphasisFont = NSFontManager.sharedFontManager().convertFont_toHaveTrait(baseFont, NSItalicFontMask|NSBoldFontMask);
+				const emphasisRange = NSMakeRange(text.loc.start.column, text.loc.end.column);
+				layer.addAttribute_value_forRange(NSFontAttributeName, emphasisFont, emphasisRange);
+				break;
+
+			case 'LinkReference':
+				const linkRange = NSMakeRange(text.loc.start.column, text.loc.end.column);
+				// const color = NSColor.controlAccentColor();
+				// layer.addAttribute_value_forRange(NSForegroundColorAttributeName, color, linkRange);
+				layer.addAttribute_value_forRange(NSUnderlineStyleAttributeName, 1, linkRange);
+				break;
+
+			case 'Delete':
+				let strikethroughRange = NSMakeRange(text.loc.start.column, text.loc.end.column);
+				layer.addAttribute_value_forRange(NSStrikethroughStyleAttributeName, 1, strikethroughRange);
+				break;
+
+			// case 'Code':
+			// 	sketchParsedText.push(text.value);
+			// 	break;
+
+			default:
+				break;
 		}
 	});
+	console.log(layer);
+
+
+	return layer;
 
 }
 

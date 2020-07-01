@@ -11334,16 +11334,15 @@ function updateLayerValue(data, layer, layerName, options, layerFullPath, symbol
 
 
 function injectValue(record, layer, lang) {
-  var currentCellData = record.fields[lang];
+  var currentCellData = record.fields[lang]; // const data = currentCellData ? currentCellData.replace(/[^A-Za-z 0-9 \.,\?""!@#\$%\^&\*\(\)-_=\+;:<>\/\\\|\}\{\[\]`~]*/g, '') : ' ';
+
   var data = currentCellData ? currentCellData : ' '; // console.log(data);
-  // const parsedData = checkForMarkdown(data, layer);
 
   if (!layer.hidden) {
     if (layer.value) {// layer.value = data;
     } else if (layer.text) {
-      layer.text = data;
-      console.log(layer.sketchObject);
-      checkForMarkdown(data, layer.sketchObject);
+      // layer.text = data;
+      checkForMarkdown(data, layer.sketchObject, layer); // console.log(layer.sketchObject.treeAsDictionary());
     }
   }
 }
@@ -11428,42 +11427,88 @@ function getOverrideFullName(symbolName, override) {
   return overrideNameHierarchy.join(' / ');
 }
 
-function checkForMarkdown(data, layer) {
+function stripMarkdownFromText(data, accData) {
+  var arrData = Array.isArray(data) ? data : Object.values(data);
+  return arrData.reduce(function (acc, curr) {
+    if ((curr.type === 'Str' || curr.type === 'Code') && curr.value) {
+      accData.push(curr.value);
+      return accData;
+    } else if (curr.type && curr.type !== 'Definition') {
+      return stripMarkdownFromText(curr.children, accData);
+    } else {
+      return accData;
+    }
+  }, []);
+}
+
+function checkForMarkdown(data, layer, layer2) {
   var ast = parse(data);
   var paragraphs = ast.children; // paragraphs.forEach(paragraph => { });
-  // console.log('RAW', paragraphs[0].raw);
-  // let attributedString = NSMutableAttributedString.new().initWithString(paragraphs[0].raw);
 
   var baseFont = layer.font();
+  console.log('paragraph', paragraphs[0]); // console.log('paragraph 2', paragraphs[1]);
+
+  var plainText = stripMarkdownFromText(paragraphs, []).join('');
+  console.log('STRIPPED', plainText);
+
+  if (layer2.value) {
+    layer2.value = plainText;
+  } else if (layer2.text) {
+    layer2.text = plainText;
+  }
+
+  var rangeDelay = 0;
   paragraphs[0].children.forEach(function (text) {
+    console.log(text);
+    var rangeStart = text.range[0];
+    var rangeEnd = text.range[1] - text.range[0];
+    var range = NSMakeRange(rangeStart, rangeEnd);
+
     switch (text.type) {
-      // case 'Str':
-      // 	sketchParsedText.push(text.value);
-      // 	break;
       case 'Strong':
+        rangeStart -= rangeDelay;
+        rangeEnd -= 4 + rangeDelay;
+        range = NSMakeRange(rangeStart, rangeEnd);
         var boldFont = NSFontManager.sharedFontManager().convertFont_toHaveTrait(baseFont, NSBoldFontMask);
-        var boldRange = NSMakeRange(text.loc.start.column, text.loc.end.column);
-        layer.addAttribute_value_forRange(NSFontAttributeName, boldFont, boldRange);
+        layer.addAttribute_value_forRange(NSFontAttributeName, boldFont, range);
+        rangeDelay += 4;
         break;
 
       case 'Emphasis':
-        var emphasisFont = NSFontManager.sharedFontManager().convertFont_toHaveTrait(baseFont, NSItalicFontMask | NSBoldFontMask);
-        var emphasisRange = NSMakeRange(text.loc.start.column, text.loc.end.column);
-        layer.addAttribute_value_forRange(NSFontAttributeName, emphasisFont, emphasisRange);
-        break;
-
-      case 'LinkReference':
-        var linkRange = NSMakeRange(text.loc.start.column, text.loc.end.column); // const color = NSColor.controlAccentColor();
-        // layer.addAttribute_value_forRange(NSForegroundColorAttributeName, color, linkRange);
-
-        layer.addAttribute_value_forRange(NSUnderlineStyleAttributeName, 1, linkRange);
+        rangeStart -= rangeDelay;
+        rangeEnd -= 2;
+        range = NSMakeRange(rangeStart, rangeEnd);
+        var emphasisFont = NSFontManager.sharedFontManager().convertFont_toHaveTrait(baseFont, NSItalicFontMask);
+        layer.addAttribute_value_forRange(NSFontAttributeName, emphasisFont, range);
+        rangeDelay += 2;
         break;
 
       case 'Delete':
-        var strikethroughRange = NSMakeRange(text.loc.start.column, text.loc.end.column);
-        layer.addAttribute_value_forRange(NSStrikethroughStyleAttributeName, 1, strikethroughRange);
+        rangeStart -= rangeDelay;
+        rangeEnd -= 4;
+        range = NSMakeRange(rangeStart, rangeEnd);
+        layer.addAttribute_value_forRange(NSStrikethroughStyleAttributeName, 1, range);
+        rangeDelay += 4;
         break;
-      // case 'Code':
+
+      case 'LinkReference':
+        rangeStart -= rangeDelay;
+        rangeEnd -= 5;
+        range = NSMakeRange(rangeStart, rangeEnd); // const color = NSColor.colorWithRed_green_blue_alpha(1,0,0,1);
+
+        var color = NSColor.colorWithHex('0000FF');
+        layer.addAttribute_value_forRange(NSForegroundColorAttributeName, color, range);
+        layer.addAttribute_value_forRange(NSUnderlineStyleAttributeName, 1, range);
+        rangeDelay += 5;
+        break;
+
+      case 'Definition':
+        break;
+
+      case 'Code':
+        rangeDelay += 2;
+        break;
+      // case 'Str':
       // 	sketchParsedText.push(text.value);
       // 	break;
 
@@ -11471,27 +11516,7 @@ function checkForMarkdown(data, layer) {
         break;
     }
   });
-  console.log(layer);
   return layer;
-}
-
-function insertNestedTextStyles() {
-  var text = document.selectedLayers.layers[0];
-  var attrStr = text.sketchObject.attributedStringValue();
-  var limitRange = NSMakeRange(0, attrStr.length());
-  var effectiveRange = MOPointer.alloc().init();
-  var fonts = [];
-
-  while (limitRange.length > 0) {
-    console.log(NSFontAttributeName);
-    console.log(limitRange.location);
-    fonts.push(attrStr.attribute_atIndex_longestEffectiveRange_inRange(NSFontAttributeName, limitRange.location, effectiveRange, limitRange));
-    console.log(effectiveRange.value());
-    console.log(limitRange);
-    limitRange = NSMakeRange(NSMaxRange(effectiveRange.value()), NSMaxRange(limitRange) - NSMaxRange(effectiveRange.value()));
-  }
-
-  console.log(fonts);
 }
 /* WEBPACK VAR INJECTION */}.call(this, __webpack_require__(/*! ./node_modules/sketch-polyfill-fetch/lib/index.js */ "./node_modules/sketch-polyfill-fetch/lib/index.js"), __webpack_require__(/*! ./node_modules/@skpm/timers/timeout.js */ "./node_modules/@skpm/timers/timeout.js")["setTimeout"]))
 

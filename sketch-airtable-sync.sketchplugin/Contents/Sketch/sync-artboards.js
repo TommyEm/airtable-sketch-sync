@@ -11360,17 +11360,21 @@ function updateLayerValue(data, layer, layerName, options, layerFullPath, symbol
 
 
 function injectValue(record, layer, lang) {
-  var currentCellData = record.fields[lang]; // const data = currentCellData ? currentCellData.replace(/[^A-Za-z 0-9 \.,\?""!@#\$%\^&\*\(\)-_=\+;:<>\/\\\|\}\{\[\]`~]*/g, '') : ' ';
-
-  var data = currentCellData ? currentCellData : ' '; // console.log(data);
-
   if (!layer.hidden) {
-    if (layer.value) {// layer.value = data;
-    } else if (layer.text) {// layer.text = data;
-      // console.log(layer.sketchObject.treeAsDictionary());
-    }
+    var currentCellData = record.fields[lang];
+    var data = currentCellData ? currentCellData : ' '; // const data = currentCellData ? currentCellData.replace(/[^A-Za-z 0-9 \.,\?""!@#\$%\^&\*\(\)-_=\+;:<>\/\\\|\}\{\[\]`~]*/g, '') : ' ';
 
-    checkForMarkdown(data, layer.sketchObject, layer);
+    var ast = parse(data);
+    var astData = ast.children;
+    var strippedText = stripMarkdownFromText(astData, []).join('');
+
+    if (layer.value) {
+      layer.value = strippedText;
+    } else if (layer.text) {
+      layer.text = strippedText; // console.log(layer.sketchObject.treeAsDictionary());
+
+      applyMarkdownStyles(astData, layer);
+    }
   }
 }
 /**
@@ -11453,6 +11457,13 @@ function getOverrideFullName(symbolName, override) {
   });
   return overrideNameHierarchy.join(' / ');
 }
+/**
+ * Strip AST formatted strings from markdown syntax
+ * @param {object} data
+ * @param {array} accData
+ * @returns {array}
+ */
+
 
 function stripMarkdownFromText(data, accData) {
   var arrData = Array.isArray(data) ? data : Object.values(data);
@@ -11467,83 +11478,95 @@ function stripMarkdownFromText(data, accData) {
     }
   }, []);
 }
+/**
+ * Checks for data sub objects and converts markdown styles into Objective-C format
+ * @param {object} astData // Data in AST format
+ * @param {object} layer
+ */
 
-function checkForMarkdown(data, layer, layer2) {
-  var ast = parse(data);
-  var paragraphs = ast.children;
-  console.log('layer', layer.treeAsDictionary()); // paragraphs.forEach(paragraph => { });
 
-  var baseFont = layer.font(); // console.log('paragraph', paragraphs[0]);
-  // console.log('paragraph 2', paragraphs[1]);
+function applyMarkdownStyles(astData, layer) {
+  var layerObject = layer.sketchObject;
+  astData.forEach(function (paragraph) {
+    if (paragraph.children) {
+      var rangeDelay = 0;
+      paragraph.children.forEach(function (text) {
+        // Convert markdown + returns rangeDelay for update
+        rangeDelay = convertMarkdownToSketch(text, layerObject, rangeDelay);
+      });
+    } else {
+      var _rangeDelay = 0;
+      var text = paragraph; // Convert markdown + returns rangeDelay for update
 
-  var plainText = stripMarkdownFromText(paragraphs, []).join(''); // console.log('STRIPPED', plainText);
-
-  if (layer2.value) {
-    layer2.value = plainText;
-  } else if (layer2.text) {
-    layer2.text = plainText;
-  }
-
-  var rangeDelay = 0;
-  paragraphs[0].children.forEach(function (text) {
-    console.log(text);
-    var rangeStart = text.range[0];
-    var rangeEnd = text.range[1] - text.range[0];
-    var range = NSMakeRange(rangeStart, rangeEnd);
-
-    switch (text.type) {
-      case 'Strong':
-        rangeStart -= rangeDelay;
-        rangeEnd -= 4 + rangeDelay;
-        range = NSMakeRange(rangeStart, rangeEnd);
-        var boldFont = NSFontManager.sharedFontManager().convertFont_toHaveTrait(baseFont, NSBoldFontMask);
-        layer.addAttribute_value_forRange(NSFontAttributeName, boldFont, range);
-        rangeDelay += 4;
-        break;
-
-      case 'Emphasis':
-        rangeStart -= rangeDelay;
-        rangeEnd -= 2;
-        range = NSMakeRange(rangeStart, rangeEnd);
-        var emphasisFont = NSFontManager.sharedFontManager().convertFont_toHaveTrait(baseFont, NSItalicFontMask);
-        layer.addAttribute_value_forRange(NSFontAttributeName, emphasisFont, range);
-        rangeDelay += 2;
-        break;
-
-      case 'Delete':
-        rangeStart -= rangeDelay;
-        rangeEnd -= 4;
-        range = NSMakeRange(rangeStart, rangeEnd);
-        layer.addAttribute_value_forRange(NSStrikethroughStyleAttributeName, 1, range);
-        rangeDelay += 4;
-        break;
-
-      case 'LinkReference':
-        rangeStart -= rangeDelay;
-        rangeEnd -= 5;
-        range = NSMakeRange(rangeStart, rangeEnd); // const color = NSColor.colorWithRed_green_blue_alpha(1,0,0,1);
-
-        var color = NSColor.colorWithHex('0000FF');
-        layer.addAttribute_value_forRange(NSForegroundColorAttributeName, color, range);
-        layer.addAttribute_value_forRange(NSUnderlineStyleAttributeName, 1, range);
-        rangeDelay += 5;
-        break;
-
-      case 'Definition':
-        break;
-
-      case 'Code':
-        rangeDelay += 2;
-        break;
-      // case 'Str':
-      // 	sketchParsedText.push(text.value);
-      // 	break;
-
-      default:
-        break;
+      _rangeDelay = convertMarkdownToSketch(text, layerObject, _rangeDelay);
     }
   });
-  return layer;
+}
+/**
+ * Converts an AST node style into Objective-C style and applies it to a layer
+ * @param {object} text // AST format
+ * @param {object} layerObject // Sketch object
+ * @param {number} rangeDelay
+ * @returns {number}
+ */
+
+
+function convertMarkdownToSketch(text, layerObject, rangeDelay) {
+  var rangeStart = text.range[0];
+  var rangeEnd = text.range[1] - text.range[0];
+  var range = NSMakeRange(rangeStart, rangeEnd);
+  var baseFont = layerObject.font();
+
+  switch (text.type) {
+    case 'Strong':
+      rangeStart -= rangeDelay;
+      rangeEnd -= 4 + rangeDelay;
+      range = NSMakeRange(rangeStart, rangeEnd);
+      var boldFont = NSFontManager.sharedFontManager().convertFont_toHaveTrait(baseFont, NSBoldFontMask);
+      layerObject.addAttribute_value_forRange(NSFontAttributeName, boldFont, range);
+      rangeDelay += 4;
+      break;
+
+    case 'Emphasis':
+      rangeStart -= rangeDelay;
+      rangeEnd -= 2;
+      range = NSMakeRange(rangeStart, rangeEnd);
+      var emphasisFont = NSFontManager.sharedFontManager().convertFont_toHaveTrait(baseFont, NSItalicFontMask);
+      layerObject.addAttribute_value_forRange(NSFontAttributeName, emphasisFont, range);
+      rangeDelay += 2;
+      break;
+
+    case 'Delete':
+      rangeStart -= rangeDelay;
+      rangeEnd -= 4;
+      range = NSMakeRange(rangeStart, rangeEnd);
+      layerObject.addAttribute_value_forRange(NSStrikethroughStyleAttributeName, 1, range);
+      rangeDelay += 4;
+      break;
+
+    case 'Code':
+      rangeDelay += 2;
+      break;
+
+    case 'LinkReference':
+      rangeStart -= rangeDelay;
+      rangeEnd -= 5;
+      range = NSMakeRange(rangeStart, rangeEnd); // const color = NSColor.colorWithRed_green_blue_alpha(1,0,0,1);
+
+      var color = NSColor.colorWithHex('0000FF');
+      layerObject.addAttribute_value_forRange(NSForegroundColorAttributeName, color, range);
+      layerObject.addAttribute_value_forRange(NSUnderlineStyleAttributeName, 1, range);
+      rangeDelay += 5;
+      break;
+
+    case 'Str':
+    case 'Definition': // Link definition
+
+    default:
+      break;
+  }
+
+  return rangeDelay;
 }
 /* WEBPACK VAR INJECTION */}.call(this, __webpack_require__(/*! ./node_modules/sketch-polyfill-fetch/lib/index.js */ "./node_modules/sketch-polyfill-fetch/lib/index.js"), __webpack_require__(/*! ./node_modules/@skpm/timers/timeout.js */ "./node_modules/@skpm/timers/timeout.js")["setTimeout"]))
 

@@ -285,21 +285,25 @@ function updateLayerValue(data, layer, layerName, options, layerFullPath, symbol
  * @param {object} layer
  */
 function injectValue(record, layer, lang) {
-	const currentCellData = record.fields[lang];
-	// const data = currentCellData ? currentCellData.replace(/[^A-Za-z 0-9 \.,\?""!@#\$%\^&\*\(\)-_=\+;:<>\/\\\|\}\{\[\]`~]*/g, '') : ' ';
-	const data = currentCellData ? currentCellData : ' ';
-	// console.log(data);
 
 	if (!layer.hidden) {
+		const currentCellData = record.fields[lang];
+		const data = currentCellData ? currentCellData : ' ';
+		// const data = currentCellData ? currentCellData.replace(/[^A-Za-z 0-9 \.,\?""!@#\$%\^&\*\(\)-_=\+;:<>\/\\\|\}\{\[\]`~]*/g, '') : ' ';
+
+		const ast = parse(data);
+		const astData = ast.children;
+		const strippedText = stripMarkdownFromText(astData, []).join('');
+
 		if (layer.value) {
-			// layer.value = data;
+			layer.value = strippedText;
 
 		} else if (layer.text) {
-			// layer.text = data;
+			layer.text = strippedText;
 
 			// console.log(layer.sketchObject.treeAsDictionary());
+			applyMarkdownStyles(astData, layer);
 		}
-		checkForMarkdown(data, layer.sketchObject, layer);
 	}
 
 }
@@ -376,6 +380,12 @@ function getOverrideFullName(symbolName, override) {
 }
 
 
+/**
+ * Strip AST formatted strings from markdown syntax
+ * @param {object} data
+ * @param {array} accData
+ * @returns {array}
+ */
 function stripMarkdownFromText(data, accData) {
 	const arrData = Array.isArray(data) ? data : Object.values(data);
 
@@ -394,90 +404,94 @@ function stripMarkdownFromText(data, accData) {
 }
 
 
-function checkForMarkdown(data, layer, layer2) {
+/**
+ * Checks for data sub objects and converts markdown styles into Objective-C format
+ * @param {object} astData // Data in AST format
+ * @param {object} layer
+ */
+function applyMarkdownStyles(astData, layer) {
+	const layerObject = layer.sketchObject;
 
-	const ast = parse(data);
-	const paragraphs = ast.children;
-	console.log('layer', layer.treeAsDictionary());
+	astData.forEach(paragraph => {
+		if (paragraph.children) {
+			let rangeDelay = 0;
 
+			paragraph.children.forEach(text => {
+				// Convert markdown + returns rangeDelay for update
+				rangeDelay = convertMarkdownToSketch(text, layerObject, rangeDelay);
+			});
 
-	// paragraphs.forEach(paragraph => { });
+		} else {
+			let rangeDelay = 0;
+			const text = paragraph;
 
-	const baseFont = layer.font();
-	// console.log('paragraph', paragraphs[0]);
-	// console.log('paragraph 2', paragraphs[1]);
-
-	const plainText = stripMarkdownFromText(paragraphs, []).join('');
-	// console.log('STRIPPED', plainText);
-
-	if (layer2.value) {
-		layer2.value = plainText;
-
-	} else if (layer2.text) {
-		layer2.text = plainText;
-	}
-
-	let rangeDelay = 0;
-
-	paragraphs[0].children.forEach(text => {
-		console.log(text);
-
-		let rangeStart = text.range[0];
-		let rangeEnd = text.range[1] - text.range[0];
-		let range = NSMakeRange(rangeStart, rangeEnd);
-
-		switch (text.type) {
-			case 'Strong':
-				rangeStart -= rangeDelay;
-				rangeEnd -= (4 + rangeDelay);
-				range = NSMakeRange(rangeStart, rangeEnd);
-				const boldFont = NSFontManager.sharedFontManager().convertFont_toHaveTrait(baseFont, NSBoldFontMask);
-				layer.addAttribute_value_forRange(NSFontAttributeName, boldFont, range);
-				rangeDelay += 4;
-				break;
-
-			case 'Emphasis':
-				rangeStart -= rangeDelay;
-				rangeEnd -= 2;
-				range = NSMakeRange(rangeStart, rangeEnd);
-				const emphasisFont = NSFontManager.sharedFontManager().convertFont_toHaveTrait(baseFont, NSItalicFontMask);
-				layer.addAttribute_value_forRange(NSFontAttributeName, emphasisFont, range);
-				rangeDelay += 2;
-				break;
-
-			case 'Delete':
-				rangeStart -= rangeDelay;
-				rangeEnd -= 4;
-				range = NSMakeRange(rangeStart, rangeEnd);
-				layer.addAttribute_value_forRange(NSStrikethroughStyleAttributeName, 1, range);
-				rangeDelay += 4;
-				break;
-
-			case 'LinkReference':
-				rangeStart -= rangeDelay;
-				rangeEnd -= 5;
-				range = NSMakeRange(rangeStart, rangeEnd);
-				// const color = NSColor.colorWithRed_green_blue_alpha(1,0,0,1);
-				const color = NSColor.colorWithHex('0000FF');
-				layer.addAttribute_value_forRange(NSForegroundColorAttributeName, color, range);
-				layer.addAttribute_value_forRange(NSUnderlineStyleAttributeName, 1, range);
-				rangeDelay += 5;
-				break;
-
-			case 'Definition':
-				break;
-
-			case 'Code':
-				rangeDelay += 2;
-				break;
-			// case 'Str':
-			// 	sketchParsedText.push(text.value);
-			// 	break;
-
-			default:
-				break;
+			// Convert markdown + returns rangeDelay for update
+			rangeDelay = convertMarkdownToSketch(text, layerObject, rangeDelay);
 		}
 	});
+}
 
-	return layer;
+
+/**
+ * Converts an AST node style into Objective-C style and applies it to a layer
+ * @param {object} text // AST format
+ * @param {object} layerObject // Sketch object
+ * @param {number} rangeDelay
+ * @returns {number}
+ */
+function convertMarkdownToSketch(text, layerObject, rangeDelay) {
+	let rangeStart = text.range[0];
+	let rangeEnd = text.range[1] - text.range[0];
+	let range = NSMakeRange(rangeStart, rangeEnd);
+	const baseFont = layerObject.font();
+
+	switch (text.type) {
+		case 'Strong':
+			rangeStart -= rangeDelay;
+			rangeEnd -= (4 + rangeDelay);
+			range = NSMakeRange(rangeStart, rangeEnd);
+			const boldFont = NSFontManager.sharedFontManager().convertFont_toHaveTrait(baseFont, NSBoldFontMask);
+			layerObject.addAttribute_value_forRange(NSFontAttributeName, boldFont, range);
+			rangeDelay += 4;
+			break;
+
+		case 'Emphasis':
+			rangeStart -= rangeDelay;
+			rangeEnd -= 2;
+			range = NSMakeRange(rangeStart, rangeEnd);
+			const emphasisFont = NSFontManager.sharedFontManager().convertFont_toHaveTrait(baseFont, NSItalicFontMask);
+			layerObject.addAttribute_value_forRange(NSFontAttributeName, emphasisFont, range);
+			rangeDelay += 2;
+			break;
+
+		case 'Delete':
+			rangeStart -= rangeDelay;
+			rangeEnd -= 4;
+			range = NSMakeRange(rangeStart, rangeEnd);
+			layerObject.addAttribute_value_forRange(NSStrikethroughStyleAttributeName, 1, range);
+			rangeDelay += 4;
+			break;
+
+		case 'Code':
+			rangeDelay += 2;
+			break;
+
+		case 'LinkReference':
+			rangeStart -= rangeDelay;
+			rangeEnd -= 5;
+			range = NSMakeRange(rangeStart, rangeEnd);
+			// const color = NSColor.colorWithRed_green_blue_alpha(1,0,0,1);
+			const color = NSColor.colorWithHex('0000FF');
+			layerObject.addAttribute_value_forRange(NSForegroundColorAttributeName, color, range);
+			layerObject.addAttribute_value_forRange(NSUnderlineStyleAttributeName, 1, range);
+			rangeDelay += 5;
+			break;
+
+		case 'Str':
+		case 'Definition': // Link definition
+		default:
+			break;
+	}
+
+	return rangeDelay;
 }

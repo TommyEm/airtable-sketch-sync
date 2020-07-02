@@ -19,8 +19,8 @@ const fieldSpacing = 20;
 
 /**
  * Create alert modal with options
- * @param {object} defaultOptions 
- * @param {array} baseNames 
+ * @param {object} defaultOptions
+ * @param {array} baseNames
  */
 export function getUserOptions(defaultOptions, baseNames, langs) {
 	const alert = NSAlert.alloc().init(),
@@ -37,21 +37,21 @@ export function getUserOptions(defaultOptions, baseNames, langs) {
 
 	alertContent.setFlipped(true);
 
-	
+
 	let offsetY = 0;
 
 
 	// Select base (Project)
 	const baseLabel = createBoldLabel(
-		'Base', 
-		12, 
+		'Base',
+		12,
 		NSMakeRect(0, offsetY, fieldWidth, labelHeight)
 	);
 	alertContent.addSubview(baseLabel);
 
 	const baseSelect = createSelect(
-		baseNames, 
-		baseNames.indexOf(defaultOptions.base), 
+		baseNames,
+		baseNames.indexOf(defaultOptions.base),
 		NSMakeRect(labelWidth, offsetY, fieldWidth, fieldHeight)
 	);
 	alertContent.addSubview(baseSelect);
@@ -61,14 +61,14 @@ export function getUserOptions(defaultOptions, baseNames, langs) {
 
 	// Language
 	const langLabel = createBoldLabel(
-		'Language', 
-		12, 
+		'Language',
+		12,
 		NSMakeRect(0, offsetY, fieldWidth, labelHeight));
 	alertContent.addSubview(langLabel);
 
 	const langSelect = createSelect(
-		langs, 
-		langs.indexOf(defaultOptions.lang), 
+		langs,
+		langs.indexOf(defaultOptions.lang),
 		NSMakeRect(labelWidth, offsetY, fieldWidth, fieldHeight));
 	alertContent.addSubview(langSelect);
 
@@ -93,28 +93,28 @@ export function getUserOptions(defaultOptions, baseNames, langs) {
 
 	// Max records
 	const maxRecordsLabel = createBoldLabel(
-		'Max records', 
-		12, 
+		'Max records',
+		12,
 		NSMakeRect(0, offsetY, fieldWidth, labelHeight));
 	alertContent.addSubview(maxRecordsLabel);
 
 	const maxRecordsField = createField(
-		defaultOptions.maxRecords, 
+		defaultOptions.maxRecords,
 		NSMakeRect(labelWidth, offsetY, fieldWidth, fieldHeight));
 	alertContent.addSubview(maxRecordsField);
 
 
 
 	alertContent.frame = NSMakeRect(
-		0, 
-		20, 
-		300, 
+		0,
+		20,
+		300,
 		CGRectGetMaxY(alertContent.subviews().lastObject().frame())
 	);
 	alert.accessoryView = alertContent;
 
 
-	
+
 	// Display alert
 	var responseCode = alert.runModal();
 	if (responseCode == NSAlertFirstButtonReturn) {
@@ -125,11 +125,11 @@ export function getUserOptions(defaultOptions, baseNames, langs) {
 				maxRecords: maxRecordsField.stringValue(),
 				lang: langSelect.stringValue(),
 			};
-	
+
 			Settings.setSettingForKey('sketchAirtableSync', pluginOptions);
-	
+
 			return pluginOptions;
-	
+
 		} else {
 			return false;
 		}
@@ -140,7 +140,7 @@ export function getUserOptions(defaultOptions, baseNames, langs) {
 
 /**
  * Plugin Settings (API Key)
- * @param {object} defaultSettings 
+ * @param {object} defaultSettings
  */
 export function setPlugin(defaultSettings) {
 	const alert = NSAlert.alloc().init(),
@@ -200,4 +200,26 @@ export function setPlugin(defaultSettings) {
 			return false;
 		}
 	}
+}
+
+
+
+/**
+ * Error alert
+ * @param {string} message
+ */
+export function displayError(message) {
+	const alert = NSAlert.alloc().init(),
+		alertIconPath = context.plugin.urlForResourceNamed('icon.png').path(),
+		alertIcon = NSImage.alloc().initByReferencingFile(alertIconPath),
+		alertContent = NSView.alloc().init();
+
+	alert.setIcon(alertIcon);
+	alert.setMessageText('Error');
+	alert.setInformativeText(message);
+	// Buttons
+	alert.addButtonWithTitle('OK');
+
+	// Display alert
+	alert.runModal();
 }

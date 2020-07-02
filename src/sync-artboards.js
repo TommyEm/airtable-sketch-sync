@@ -3,7 +3,7 @@ const document = require('sketch/dom').getSelectedDocument();
 const { SymbolMaster } = require('sketch/dom');
 const { pluginSettings } = require('./settings');
 const { bases } = require('./secret');
-const { getUserOptions } = require('./lib/alert');
+const { getUserOptions, displayError } = require('./lib/alert');
 const {
 	getDefaultOptions,
 	baseNames,
@@ -54,22 +54,32 @@ export function syncAllArtboards(context) {
 export function syncSelectedArtboards(context) {
 	log('Sync Selected');
 
-	// Get user options from modal
-	const userOptions = getUserOptions(defaultOptions, baseNames, langs);
+	// No artboard selected
+	if (document.selectedLayers.isEmpty) {
+		displayError('No artboards are selected. Please select one or more.');
 
-	if (userOptions) {
-		document.selectedLayers.forEach(layer => {
+	// Artboards selected OK
+	} else {
 
-			if (layer.type === 'Artboard') {
-				log('Artboard');
-				syncArtboard(layer, userOptions);
+		// Get user options from modal
+		const userOptions = getUserOptions(defaultOptions, baseNames, langs);
 
-			} else {
-				log(layer.name);
-			}
+		if (userOptions) {
+			document.selectedLayers.forEach(layer => {
 
-		});
-		sketch.UI.message('Sync finished!');
+				if (layer.type === 'Artboard') {
+					log('Artboard');
+					syncArtboard(layer, userOptions);
+
+				} else {
+					log(layer.name);
+					displayError('No artboards are selected. Please select one or more.');
+				}
+
+			});
+			sketch.UI.message('Sync finished!');
+		}
+
 	}
 }
 
@@ -287,9 +297,9 @@ function injectValue(record, layer, lang) {
 		} else if (layer.text) {
 			// layer.text = data;
 
-			checkForMarkdown(data, layer.sketchObject, layer);
 			// console.log(layer.sketchObject.treeAsDictionary());
 		}
+		checkForMarkdown(data, layer.sketchObject, layer);
 	}
 
 }
@@ -388,15 +398,17 @@ function checkForMarkdown(data, layer, layer2) {
 
 	const ast = parse(data);
 	const paragraphs = ast.children;
+	console.log('layer', layer.treeAsDictionary());
+
 
 	// paragraphs.forEach(paragraph => { });
 
 	const baseFont = layer.font();
-	console.log('paragraph', paragraphs[0]);
+	// console.log('paragraph', paragraphs[0]);
 	// console.log('paragraph 2', paragraphs[1]);
 
 	const plainText = stripMarkdownFromText(paragraphs, []).join('');
-	console.log('STRIPPED', plainText);
+	// console.log('STRIPPED', plainText);
 
 	if (layer2.value) {
 		layer2.value = plainText;

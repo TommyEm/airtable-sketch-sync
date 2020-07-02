@@ -761,13 +761,14 @@ function getDefaultOptions() {
 /*!**************************!*\
   !*** ./src/lib/alert.js ***!
   \**************************/
-/*! exports provided: getUserOptions, setPlugin */
+/*! exports provided: getUserOptions, setPlugin, displayError */
 /***/ (function(module, __webpack_exports__, __webpack_require__) {
 
 "use strict";
 __webpack_require__.r(__webpack_exports__);
 /* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "getUserOptions", function() { return getUserOptions; });
 /* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "setPlugin", function() { return setPlugin; });
+/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "displayError", function() { return displayError; });
 var sketch = __webpack_require__(/*! sketch */ "sketch");
 
 var Settings = sketch.Settings;
@@ -786,8 +787,8 @@ var fieldHeight = 28;
 var fieldSpacing = 20;
 /**
  * Create alert modal with options
- * @param {object} defaultOptions 
- * @param {array} baseNames 
+ * @param {object} defaultOptions
+ * @param {array} baseNames
  */
 
 function getUserOptions(defaultOptions, baseNames, langs) {
@@ -848,7 +849,7 @@ function getUserOptions(defaultOptions, baseNames, langs) {
 }
 /**
  * Plugin Settings (API Key)
- * @param {object} defaultSettings 
+ * @param {object} defaultSettings
  */
 
 function setPlugin(defaultSettings) {
@@ -885,6 +886,24 @@ function setPlugin(defaultSettings) {
       return false;
     }
   }
+}
+/**
+ * Error alert
+ * @param {string} message
+ */
+
+function displayError(message) {
+  var alert = NSAlert.alloc().init(),
+      alertIconPath = context.plugin.urlForResourceNamed('icon.png').path(),
+      alertIcon = NSImage.alloc().initByReferencingFile(alertIconPath),
+      alertContent = NSView.alloc().init();
+  alert.setIcon(alertIcon);
+  alert.setMessageText('Error');
+  alert.setInformativeText(message); // Buttons
+
+  alert.addButtonWithTitle('OK'); // Display alert
+
+  alert.runModal();
 }
 
 /***/ }),

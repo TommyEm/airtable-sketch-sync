@@ -10803,13 +10803,14 @@ function getDefaultOptions() {
 /*!**************************!*\
   !*** ./src/lib/alert.js ***!
   \**************************/
-/*! exports provided: getUserOptions, setPlugin */
+/*! exports provided: getUserOptions, setPlugin, displayError */
 /***/ (function(module, __webpack_exports__, __webpack_require__) {
 
 "use strict";
 __webpack_require__.r(__webpack_exports__);
 /* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "getUserOptions", function() { return getUserOptions; });
 /* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "setPlugin", function() { return setPlugin; });
+/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "displayError", function() { return displayError; });
 var sketch = __webpack_require__(/*! sketch */ "sketch");
 
 var Settings = sketch.Settings;
@@ -10828,8 +10829,8 @@ var fieldHeight = 28;
 var fieldSpacing = 20;
 /**
  * Create alert modal with options
- * @param {object} defaultOptions 
- * @param {array} baseNames 
+ * @param {object} defaultOptions
+ * @param {array} baseNames
  */
 
 function getUserOptions(defaultOptions, baseNames, langs) {
@@ -10890,7 +10891,7 @@ function getUserOptions(defaultOptions, baseNames, langs) {
 }
 /**
  * Plugin Settings (API Key)
- * @param {object} defaultSettings 
+ * @param {object} defaultSettings
  */
 
 function setPlugin(defaultSettings) {
@@ -10927,6 +10928,24 @@ function setPlugin(defaultSettings) {
       return false;
     }
   }
+}
+/**
+ * Error alert
+ * @param {string} message
+ */
+
+function displayError(message) {
+  var alert = NSAlert.alloc().init(),
+      alertIconPath = context.plugin.urlForResourceNamed('icon.png').path(),
+      alertIcon = NSImage.alloc().initByReferencingFile(alertIconPath),
+      alertContent = NSView.alloc().init();
+  alert.setIcon(alertIcon);
+  alert.setMessageText('Error');
+  alert.setInformativeText(message); // Buttons
+
+  alert.addButtonWithTitle('OK'); // Display alert
+
+  alert.runModal();
 }
 
 /***/ }),
@@ -11114,7 +11133,8 @@ var _require3 = __webpack_require__(/*! ./secret */ "./src/secret.js"),
     bases = _require3.bases;
 
 var _require4 = __webpack_require__(/*! ./lib/alert */ "./src/lib/alert.js"),
-    getUserOptions = _require4.getUserOptions;
+    getUserOptions = _require4.getUserOptions,
+    displayError = _require4.displayError;
 
 var _require5 = __webpack_require__(/*! ./defaults */ "./src/defaults.js"),
     getDefaultOptions = _require5.getDefaultOptions,
@@ -11155,20 +11175,26 @@ function syncAllArtboards(context) {
   }
 }
 function syncSelectedArtboards(context) {
-  log('Sync Selected'); // Get user options from modal
+  log('Sync Selected'); // No artboard selected
 
-  var userOptions = getUserOptions(defaultOptions, baseNames, langs);
+  if (document.selectedLayers.isEmpty) {
+    displayError('No artboards are selected. Please select one or more.'); // Artboards selected OK
+  } else {
+    // Get user options from modal
+    var userOptions = getUserOptions(defaultOptions, baseNames, langs);
 
-  if (userOptions) {
-    document.selectedLayers.forEach(function (layer) {
-      if (layer.type === 'Artboard') {
-        log('Artboard');
-        syncArtboard(layer, userOptions);
-      } else {
-        log(layer.name);
-      }
-    });
-    sketch.UI.message('Sync finished!');
+    if (userOptions) {
+      document.selectedLayers.forEach(function (layer) {
+        if (layer.type === 'Artboard') {
+          log('Artboard');
+          syncArtboard(layer, userOptions);
+        } else {
+          log(layer.name);
+          displayError('No artboards are selected. Please select one or more.');
+        }
+      });
+      sketch.UI.message('Sync finished!');
+    }
   }
 }
 /**
@@ -11340,10 +11366,11 @@ function injectValue(record, layer, lang) {
 
   if (!layer.hidden) {
     if (layer.value) {// layer.value = data;
-    } else if (layer.text) {
-      // layer.text = data;
-      checkForMarkdown(data, layer.sketchObject, layer); // console.log(layer.sketchObject.treeAsDictionary());
+    } else if (layer.text) {// layer.text = data;
+      // console.log(layer.sketchObject.treeAsDictionary());
     }
+
+    checkForMarkdown(data, layer.sketchObject, layer);
   }
 }
 /**
@@ -11443,13 +11470,13 @@ function stripMarkdownFromText(data, accData) {
 
 function checkForMarkdown(data, layer, layer2) {
   var ast = parse(data);
-  var paragraphs = ast.children; // paragraphs.forEach(paragraph => { });
+  var paragraphs = ast.children;
+  console.log('layer', layer.treeAsDictionary()); // paragraphs.forEach(paragraph => { });
 
-  var baseFont = layer.font();
-  console.log('paragraph', paragraphs[0]); // console.log('paragraph 2', paragraphs[1]);
+  var baseFont = layer.font(); // console.log('paragraph', paragraphs[0]);
+  // console.log('paragraph 2', paragraphs[1]);
 
-  var plainText = stripMarkdownFromText(paragraphs, []).join('');
-  console.log('STRIPPED', plainText);
+  var plainText = stripMarkdownFromText(paragraphs, []).join(''); // console.log('STRIPPED', plainText);
 
   if (layer2.value) {
     layer2.value = plainText;

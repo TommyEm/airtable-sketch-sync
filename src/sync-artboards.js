@@ -196,23 +196,19 @@ function syncLayer(parentLayers, data, options, layersHierarchy) {
 							// Update values
 							updateLayerValue(data, override, layerName, options, layerFullPath, overrideFullName);
 						}
-
 					});
-
 					break;
 
 				case 'Text':
 					const layerName = removeEmojis(layer.name);
 					const layerFullPath = layersHierarchy.join(' / ');
 					updateLayerValue(data, layer, layerName, options, layerFullPath);
-
 					break;
 
 				case 'Group':
 					let newLayersHierarchy = [...layersHierarchy];
 					newLayersHierarchy.push(layer.name);
 					syncLayer(layer, data, options, newLayersHierarchy);
-
 					break;
 
 				default:
@@ -289,20 +285,19 @@ function injectValue(record, layer, lang) {
 	if (!layer.hidden) {
 		const currentCellData = record.fields[lang];
 		const data = currentCellData ? currentCellData : ' ';
-		// const data = currentCellData ? currentCellData.replace(/[^A-Za-z 0-9 \.,\?""!@#\$%\^&\*\(\)-_=\+;:<>\/\\\|\}\{\[\]`~]*/g, '') : ' ';
+		// const data = currentCellData ? currentCellData.replace(/[^A-Za-z 0-9 \.,\?""!@#\$%\^&\*\(\)-_=\+;:<>\/\\\|\}\{\[\]`~]*/g, '') : ' '; // If needed, this strips the string from invisible characters
 
 		const ast = parse(data);
 		const astData = ast.children;
 		const strippedText = stripMarkdownFromText(astData, []).join('');
 
-		if (layer.value) {
+		if (layer.value) { // Symbol override
 			layer.value = strippedText;
+			// TODO: if possible, update the override styles
 
-		} else if (layer.text) {
+		} else if (layer.text) { // Text layer
 			layer.text = strippedText;
-
-			// console.log(layer.sketchObject.treeAsDictionary());
-			applyMarkdownStyles(astData, layer);
+			applyMarkdownStyles(astData, layer.sketchObject);
 		}
 	}
 
@@ -407,18 +402,16 @@ function stripMarkdownFromText(data, accData) {
 /**
  * Checks for data sub objects and converts markdown styles into Objective-C format
  * @param {object} astData // Data in AST format
- * @param {object} layer
+ * @param {object} layer // Sketch object
  */
 function applyMarkdownStyles(astData, layer) {
-	const layerObject = layer.sketchObject;
-
 	astData.forEach(paragraph => {
 		if (paragraph.children) {
 			let rangeDelay = 0;
 
 			paragraph.children.forEach(text => {
 				// Convert markdown + returns rangeDelay for update
-				rangeDelay = convertMarkdownToSketch(text, layerObject, rangeDelay);
+				rangeDelay = convertMarkdownToSketch(text, layer, rangeDelay);
 			});
 
 		} else {
@@ -426,7 +419,7 @@ function applyMarkdownStyles(astData, layer) {
 			const text = paragraph;
 
 			// Convert markdown + returns rangeDelay for update
-			rangeDelay = convertMarkdownToSketch(text, layerObject, rangeDelay);
+			rangeDelay = convertMarkdownToSketch(text, layer, rangeDelay);
 		}
 	});
 }

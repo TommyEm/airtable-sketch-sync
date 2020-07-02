@@ -11362,18 +11362,19 @@ function updateLayerValue(data, layer, layerName, options, layerFullPath, symbol
 function injectValue(record, layer, lang) {
   if (!layer.hidden) {
     var currentCellData = record.fields[lang];
-    var data = currentCellData ? currentCellData : ' '; // const data = currentCellData ? currentCellData.replace(/[^A-Za-z 0-9 \.,\?""!@#\$%\^&\*\(\)-_=\+;:<>\/\\\|\}\{\[\]`~]*/g, '') : ' ';
+    var data = currentCellData ? currentCellData : ' '; // const data = currentCellData ? currentCellData.replace(/[^A-Za-z 0-9 \.,\?""!@#\$%\^&\*\(\)-_=\+;:<>\/\\\|\}\{\[\]`~]*/g, '') : ' '; // If needed, this strips the string from invisible characters
 
     var ast = parse(data);
     var astData = ast.children;
     var strippedText = stripMarkdownFromText(astData, []).join('');
 
     if (layer.value) {
-      layer.value = strippedText;
+      // Symbol override
+      layer.value = strippedText; // TODO: if possible, update the override styles
     } else if (layer.text) {
-      layer.text = strippedText; // console.log(layer.sketchObject.treeAsDictionary());
-
-      applyMarkdownStyles(astData, layer);
+      // Text layer
+      layer.text = strippedText;
+      applyMarkdownStyles(astData, layer.sketchObject);
     }
   }
 }
@@ -11481,24 +11482,23 @@ function stripMarkdownFromText(data, accData) {
 /**
  * Checks for data sub objects and converts markdown styles into Objective-C format
  * @param {object} astData // Data in AST format
- * @param {object} layer
+ * @param {object} layer // Sketch object
  */
 
 
 function applyMarkdownStyles(astData, layer) {
-  var layerObject = layer.sketchObject;
   astData.forEach(function (paragraph) {
     if (paragraph.children) {
       var rangeDelay = 0;
       paragraph.children.forEach(function (text) {
         // Convert markdown + returns rangeDelay for update
-        rangeDelay = convertMarkdownToSketch(text, layerObject, rangeDelay);
+        rangeDelay = convertMarkdownToSketch(text, layer, rangeDelay);
       });
     } else {
       var _rangeDelay = 0;
       var text = paragraph; // Convert markdown + returns rangeDelay for update
 
-      _rangeDelay = convertMarkdownToSketch(text, layerObject, _rangeDelay);
+      _rangeDelay = convertMarkdownToSketch(text, layer, _rangeDelay);
     }
   });
 }

@@ -11226,11 +11226,14 @@ function syncArtboard(artboard, options) {
   }).catch(function (error) {
     if (error.response) {
       console.log(error.response.data);
+      displayError(error.response.data);
     } else if (error.request) {
       console.log(error.request);
+      displayError(error.request);
     } else {
       // Something happened in setting up the request that triggered an Error
       console.log('Error', error.message);
+      displayError(error.message);
     }
 
     console.log(error.config);
@@ -11247,11 +11250,14 @@ function syncArtboard(artboard, options) {
     }).catch(function (error) {
       if (error.response) {
         console.log(error.response.data);
+        displayError(error.response.data);
       } else if (error.request) {
         console.log(error.request);
+        displayError(error.request);
       } else {
         // Something happened in setting up the request that triggered an Error
         console.log('Error', error.message);
+        displayError('There\'s an error in the selected options.\n\n' + error.message);
       }
 
       console.log(error.config);

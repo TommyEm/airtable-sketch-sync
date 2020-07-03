@@ -3,7 +3,7 @@ const { DataSupplier } = sketch;
 const util = require('util');
 const fetch = require("sketch-polyfill-fetch");
 const { bases } = require('./secret');
-const { getUserOptions } = require('./lib/alert');
+const { getUserOptions, displayError } = require('./lib/alert');
 const { pluginSettings } = require('./settings');
 const {
 	getDefaultOptions,
@@ -31,10 +31,7 @@ export function onSupplyData(context) {
 	let sketchDataKey = context.data.key;
 	const items = util.toArray(context.data.items).map(sketch.fromNative);
 
-	insertNestedTextStyles();
-
 	syncSelectedLayer(sketchDataKey, items);
-
 }
 
 
@@ -92,68 +89,26 @@ export function syncSelectedLayer(sketchDataKey, items) {
 								const currentCellData = record.fields[userOptions.lang];
 								const data = currentCellData ? currentCellData : ' ';
 
-								// console.log('sketchDataKey', sketchDataKey);
-								// console.log('data', data);
-
 								DataSupplier.supplyDataAtIndex(sketchDataKey, data, index);
 							}
-						})
+						});
 					})
 					.catch((error) => {
 						if (error.response) {
 							console.log(error.response.data);
+							displayError(error.response.data);
 						} else if (error.request) {
 							console.log(error.request);
+							displayError(error.request);
 						} else {
 							// Something happened in setting up the request that triggered an Error
 							console.log('Error', error.message);
+							displayError(error.message);
 						}
 						console.log(error.config);
 					});
 			}
 		});
 	}
-
-}
-
-
-function insertNestedTextStyles() {
-
-	let text = document.selectedLayers.layers[0];
-	const attrStr = text.sketchObject.attributedStringValue();
-	let limitRange = NSMakeRange(0, attrStr.length());
-	let effectiveRange = MOPointer.alloc().init();
-
-	// console.log('text', JSON.stringify(text, null, 2));
-	const objDict = attrStr.treeAsDictionary();
-	const jsonData = NSJSONSerialization.dataWithJSONObject_options_error_(objDict, 0, nil);
-	const jsonString = NSString.alloc().initWithData_encoding_(jsonData, NSUTF8StringEncoding);
-	console.log('attrStr', jsonString);
-
-
-
-
-
-	let fonts = [];
-
-	while (limitRange.length > 0) {
-		console.log('NSFontAttributeName', NSFontAttributeName);
-		console.log('limitRange.location', limitRange.location);
-		fonts.push(attrStr.attribute_atIndex_longestEffectiveRange_inRange(
-			NSFontAttributeName,
-			limitRange.location,
-			effectiveRange,
-			limitRange
-		));
-		console.log('effectiveRange.value', effectiveRange.value());
-		console.log('limitRange', limitRange);
-		limitRange = NSMakeRange(
-			NSMaxRange(effectiveRange.value()),
-			NSMaxRange(limitRange) - NSMaxRange(effectiveRange.value())
-		);
-	}
-
-
-	console.log('fonts', fonts);
 
 }

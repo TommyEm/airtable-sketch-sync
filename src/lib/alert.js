@@ -103,13 +103,27 @@ export function getUserOptions(defaultOptions, baseNames, langs) {
 		NSMakeRect(labelWidth, offsetY, fieldWidth, fieldHeight));
 	alertContent.addSubview(maxRecordsField);
 
+	offsetY = CGRectGetMaxY(alertContent.subviews().lastObject().frame()) + fieldSpacing;
+
+
+	// Underline color
+	const underlineColorLabel = createBoldLabel(
+		'Underline color',
+		12,
+		NSMakeRect(0, offsetY, fieldWidth, labelHeight));
+	alertContent.addSubview(underlineColorLabel);
+
+	const underlineColorField = createField(
+		defaultOptions.underlineColor,
+		NSMakeRect(labelWidth, offsetY, fieldWidth, fieldHeight));
+	alertContent.addSubview(underlineColorField);
 
 
 	alertContent.frame = NSMakeRect(
 		0,
 		20,
 		300,
-		CGRectGetMaxY(alertContent.subviews().lastObject().frame())
+		CGRectGetMaxY(alertContent.subviews().lastObject().frame()),
 	);
 	alert.accessoryView = alertContent;
 
@@ -124,6 +138,7 @@ export function getUserOptions(defaultOptions, baseNames, langs) {
 				view: viewSelect.stringValue(),
 				maxRecords: maxRecordsField.stringValue(),
 				lang: langSelect.stringValue(),
+				underlineColor: underlineColorField.stringValue(),
 			};
 
 			Settings.setSettingForKey('sketchAirtableSync', pluginOptions);

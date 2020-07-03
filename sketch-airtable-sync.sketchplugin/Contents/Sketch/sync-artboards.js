@@ -10787,11 +10787,13 @@ function getDefaultOptions() {
     defaultOptions.maxRecords = pluginOptions.maxRecords;
     defaultOptions.view = pluginOptions.view;
     defaultOptions.lang = pluginOptions.lang;
+    defaultOptions.underlineColor = pluginOptions.underlineColor;
   } else {
     defaultOptions.base = baseNames[0];
     defaultOptions.maxRecords = 15;
     defaultOptions.view = views[0];
     defaultOptions.lang = langs[0];
+    defaultOptions.underlineColor = '0000FF';
   }
 
   return defaultOptions;
@@ -10869,6 +10871,12 @@ function getUserOptions(defaultOptions, baseNames, langs) {
   alertContent.addSubview(maxRecordsLabel);
   var maxRecordsField = createField(defaultOptions.maxRecords, NSMakeRect(labelWidth, offsetY, fieldWidth, fieldHeight));
   alertContent.addSubview(maxRecordsField);
+  offsetY = CGRectGetMaxY(alertContent.subviews().lastObject().frame()) + fieldSpacing; // Underline color
+
+  var underlineColorLabel = createBoldLabel('Underline color', 12, NSMakeRect(0, offsetY, fieldWidth, labelHeight));
+  alertContent.addSubview(underlineColorLabel);
+  var underlineColorField = createField(defaultOptions.underlineColor, NSMakeRect(labelWidth, offsetY, fieldWidth, fieldHeight));
+  alertContent.addSubview(underlineColorField);
   alertContent.frame = NSMakeRect(0, 20, 300, CGRectGetMaxY(alertContent.subviews().lastObject().frame()));
   alert.accessoryView = alertContent; // Display alert
 
@@ -10880,7 +10888,8 @@ function getUserOptions(defaultOptions, baseNames, langs) {
         base: baseSelect.stringValue(),
         view: viewSelect.stringValue(),
         maxRecords: maxRecordsField.stringValue(),
-        lang: langSelect.stringValue()
+        lang: langSelect.stringValue(),
+        underlineColor: underlineColorField.stringValue()
       };
       Settings.setSettingForKey('sketchAirtableSync', pluginOptions);
       return pluginOptions;
@@ -11150,6 +11159,7 @@ var _require7 = __webpack_require__(/*! @textlint/markdown-to-ast */ "./node_mod
 
 var foreignSymbolMasters = getForeignSymbolMasters(document);
 var defaultOptions = getDefaultOptions();
+var underlineColor = defaultOptions.underlineColor;
 function syncAllArtboards(context) {
   log('Sync all artboards on page'); // Get user options from modal
 
@@ -11184,6 +11194,7 @@ function syncSelectedArtboards(context) {
     var userOptions = getUserOptions(defaultOptions, baseNames, langs);
 
     if (userOptions) {
+      underlineColor = userOptions.underlineColor;
       document.selectedLayers.forEach(function (layer) {
         if (layer.type === 'Artboard') {
           log('Artboard');
@@ -11553,7 +11564,7 @@ function convertMarkdownToSketch(text, layerObject, rangeDelay) {
       rangeEnd -= 5;
       range = NSMakeRange(rangeStart, rangeEnd); // const color = NSColor.colorWithRed_green_blue_alpha(1,0,0,1);
 
-      var color = NSColor.colorWithHex('0000FF');
+      var color = NSColor.colorWithHex(underlineColor);
       layerObject.addAttribute_value_forRange(NSForegroundColorAttributeName, color, range);
       layerObject.addAttribute_value_forRange(NSUnderlineStyleAttributeName, 1, range);
       rangeDelay += 5;

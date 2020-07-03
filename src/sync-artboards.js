@@ -15,6 +15,7 @@ const { parse } = require('@textlint/markdown-to-ast');
 
 const foreignSymbolMasters = getForeignSymbolMasters(document);
 const defaultOptions = getDefaultOptions();
+let { underlineColor } = defaultOptions;
 
 
 export function syncAllArtboards(context) {
@@ -65,6 +66,8 @@ export function syncSelectedArtboards(context) {
 		const userOptions = getUserOptions(defaultOptions, baseNames, langs);
 
 		if (userOptions) {
+			underlineColor = userOptions.underlineColor;
+
 			document.selectedLayers.forEach(layer => {
 
 				if (layer.type === 'Artboard') {
@@ -474,7 +477,7 @@ function convertMarkdownToSketch(text, layerObject, rangeDelay) {
 			rangeEnd -= 5;
 			range = NSMakeRange(rangeStart, rangeEnd);
 			// const color = NSColor.colorWithRed_green_blue_alpha(1,0,0,1);
-			const color = NSColor.colorWithHex('0000FF');
+			const color = NSColor.colorWithHex(underlineColor);
 			layerObject.addAttribute_value_forRange(NSForegroundColorAttributeName, color, range);
 			layerObject.addAttribute_value_forRange(NSUnderlineStyleAttributeName, 1, range);
 			rangeDelay += 5;

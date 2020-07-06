@@ -10,7 +10,8 @@ const {
 	baseNames,
 	langs,
 } = require('./defaults');
-const { getApiEndpoint } = require('./lib/utils');
+const { getApiEndpoint, stripMarkdownFromText } = require('./lib/utils');
+const { parse } = require('@textlint/markdown-to-ast');
 
 const document = require('sketch/dom').getSelectedDocument();
 const defaultOptions = getDefaultOptions();
@@ -44,7 +45,7 @@ export function syncSelectedLayer(sketchDataKey, items) {
 	if (userOptions) {
 
 		// We iterate on each target for data
-		items.forEach((item, index) => {
+		items.forEach((item, itemIndex) => {
 			let layerName;
 			if (item.type === 'DataOverride') {
 				layerName = item.override.affectedLayer.name;
@@ -89,7 +90,13 @@ export function syncSelectedLayer(sketchDataKey, items) {
 								const currentCellData = record.fields[userOptions.lang];
 								const data = currentCellData ? currentCellData : ' ';
 
-								DataSupplier.supplyDataAtIndex(sketchDataKey, data, index);
+								const ast = parse(data);
+								const astData = ast.children;
+								const cleanData = stripMarkdownFromText(astData, []).join('');
+
+								// TODO: if possible, update the override styles
+
+								DataSupplier.supplyDataAtIndex(sketchDataKey, cleanData, itemIndex);
 							}
 						});
 					})

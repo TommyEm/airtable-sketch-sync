@@ -9,7 +9,11 @@ const {
 	baseNames,
 	langs,
 } = require('./defaults');
-const { getApiEndpoint, removeEmojis } = require('./lib/utils');
+const {
+	getApiEndpoint,
+	removeEmojis,
+	stripMarkdownFromText,
+} = require('./lib/utils');
 const { parse } = require('@textlint/markdown-to-ast');
 
 
@@ -44,8 +48,6 @@ export function syncAllArtboards(context) {
 			} else {
 				++currentPage;
 			}
-
-
 		});
 
 	}
@@ -385,30 +387,6 @@ function getOverrideFullName(symbolName, override) {
 
 
 /**
- * Strip AST formatted strings from markdown syntax
- * @param {object} data
- * @param {array} accData
- * @returns {array}
- */
-function stripMarkdownFromText(data, accData) {
-	const arrData = Array.isArray(data) ? data : Object.values(data);
-
-	return arrData.reduce((acc, curr) => {
-		if ((curr.type === 'Str' || curr.type === 'Code') && curr.value) {
-			accData.push(curr.value);
-			return accData;
-
-		} else if (curr.type && curr.type !== 'Definition') {
-			return stripMarkdownFromText(curr.children, accData);
-
-		} else {
-			return accData;
-		}
-	}, []);
-}
-
-
-/**
  * Checks for data sub objects and converts markdown styles into Objective-C format
  * @param {object} astData // Data in AST format
  * @param {object} layer // Sketch object
@@ -470,6 +448,7 @@ function convertMarkdownToSketch(text, layerObject, rangeDelay) {
 			rangeStart -= rangeDelay;
 			rangeEnd -= 4;
 			range = NSMakeRange(rangeStart, rangeEnd);
+
 			layerObject.addAttribute_value_forRange(NSStrikethroughStyleAttributeName, 1, range);
 			rangeDelay += 4;
 			break;
@@ -482,7 +461,6 @@ function convertMarkdownToSketch(text, layerObject, rangeDelay) {
 			rangeStart -= rangeDelay;
 			rangeEnd -= 5;
 			range = NSMakeRange(rangeStart, rangeEnd);
-			// const color = NSColor.colorWithRed_green_blue_alpha(1,0,0,1);
 			const color = NSColor.colorWithHex(underlineColor);
 			layerObject.addAttribute_value_forRange(NSForegroundColorAttributeName, color, range);
 			layerObject.addAttribute_value_forRange(NSUnderlineStyleAttributeName, 1, range);

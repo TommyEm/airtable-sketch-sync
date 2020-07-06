@@ -11021,13 +11021,14 @@ function createSelect(items, selectedItemIndex, frame) {
 /*!**************************!*\
   !*** ./src/lib/utils.js ***!
   \**************************/
-/*! exports provided: getApiEndpoint, removeEmojis */
+/*! exports provided: getApiEndpoint, removeEmojis, stripMarkdownFromText */
 /***/ (function(module, __webpack_exports__, __webpack_require__) {
 
 "use strict";
 __webpack_require__.r(__webpack_exports__);
 /* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "getApiEndpoint", function() { return getApiEndpoint; });
 /* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "removeEmojis", function() { return removeEmojis; });
+/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "stripMarkdownFromText", function() { return stripMarkdownFromText; });
 function getApiEndpoint(base, table, maxRecords, view, APIKey) {
   return encodeURI("https://api.airtable.com/v0/".concat(base, "/").concat(table, "?maxRecords=").concat(maxRecords, "&view=").concat(view, "&api_key=").concat(APIKey));
 }
@@ -11046,6 +11047,26 @@ function removeEmojis(string) {
   } else {
     return string.trim();
   }
+}
+/**
+ * Strip AST formatted strings from markdown syntax
+ * @param {object} data
+ * @param {array} accData
+ * @returns {array}
+ */
+
+function stripMarkdownFromText(data, accData) {
+  var arrData = Array.isArray(data) ? data : Object.values(data);
+  return arrData.reduce(function (acc, curr) {
+    if ((curr.type === 'Str' || curr.type === 'Code') && curr.value) {
+      accData.push(curr.value);
+      return accData;
+    } else if (curr.type && curr.type !== 'Definition') {
+      return stripMarkdownFromText(curr.children, accData);
+    } else {
+      return accData;
+    }
+  }, []);
 }
 
 /***/ }),
@@ -11152,7 +11173,8 @@ var _require5 = __webpack_require__(/*! ./defaults */ "./src/defaults.js"),
 
 var _require6 = __webpack_require__(/*! ./lib/utils */ "./src/lib/utils.js"),
     getApiEndpoint = _require6.getApiEndpoint,
-    removeEmojis = _require6.removeEmojis;
+    removeEmojis = _require6.removeEmojis,
+    stripMarkdownFromText = _require6.stripMarkdownFromText;
 
 var _require7 = __webpack_require__(/*! @textlint/markdown-to-ast */ "./node_modules/@textlint/markdown-to-ast/lib/markdown-parser.js"),
     parse = _require7.parse;
@@ -11476,27 +11498,6 @@ function getOverrideFullName(symbolName, override) {
   return overrideNameHierarchy.join(' / ');
 }
 /**
- * Strip AST formatted strings from markdown syntax
- * @param {object} data
- * @param {array} accData
- * @returns {array}
- */
-
-
-function stripMarkdownFromText(data, accData) {
-  var arrData = Array.isArray(data) ? data : Object.values(data);
-  return arrData.reduce(function (acc, curr) {
-    if ((curr.type === 'Str' || curr.type === 'Code') && curr.value) {
-      accData.push(curr.value);
-      return accData;
-    } else if (curr.type && curr.type !== 'Definition') {
-      return stripMarkdownFromText(curr.children, accData);
-    } else {
-      return accData;
-    }
-  }, []);
-}
-/**
  * Checks for data sub objects and converts markdown styles into Objective-C format
  * @param {object} astData // Data in AST format
  * @param {object} layer // Sketch object
@@ -11568,8 +11569,7 @@ function convertMarkdownToSketch(text, layerObject, rangeDelay) {
     case 'LinkReference':
       rangeStart -= rangeDelay;
       rangeEnd -= 5;
-      range = NSMakeRange(rangeStart, rangeEnd); // const color = NSColor.colorWithRed_green_blue_alpha(1,0,0,1);
-
+      range = NSMakeRange(rangeStart, rangeEnd);
       var color = NSColor.colorWithHex(underlineColor);
       layerObject.addAttribute_value_forRange(NSForegroundColorAttributeName, color, range);
       layerObject.addAttribute_value_forRange(NSUnderlineStyleAttributeName, 1, range);

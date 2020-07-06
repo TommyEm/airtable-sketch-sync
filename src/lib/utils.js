@@ -22,3 +22,27 @@ export function removeEmojis(string) {
         return string.trim();
     }
 }
+
+
+/**
+ * Strip AST formatted strings from markdown syntax
+ * @param {object} data
+ * @param {array} accData
+ * @returns {array}
+ */
+export function stripMarkdownFromText(data, accData) {
+	const arrData = Array.isArray(data) ? data : Object.values(data);
+
+	return arrData.reduce((acc, curr) => {
+		if ((curr.type === 'Str' || curr.type === 'Code') && curr.value) {
+			accData.push(curr.value);
+			return accData;
+
+		} else if (curr.type && curr.type !== 'Definition') {
+			return stripMarkdownFromText(curr.children, accData);
+
+		} else {
+			return accData;
+		}
+	}, []);
+}

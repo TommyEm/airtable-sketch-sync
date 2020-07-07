@@ -11,6 +11,7 @@ const {
 } = require('./defaults');
 const {
 	getApiEndpoint,
+	getCleanArtboardName,
 	removeEmojis,
 	stripMarkdownFromText,
 } = require('./lib/utils');
@@ -95,7 +96,8 @@ export function syncSelectedArtboards(context) {
  * @param {object} options
  */
 function syncArtboard(artboard, options) {
-	const table = artboard.name;
+	const table = getCleanArtboardName(artboard.name);
+	console.log(table);
 	const base = bases[options.base];
 
 
@@ -145,7 +147,7 @@ function syncArtboard(artboard, options) {
 				syncLayer(artboard, data, options, []);
 			})
 			.then(() => {
-				log('DONE');
+				log('Artboard synced');
 			})
 			.catch((error) => {
 				if (error.response) {
@@ -156,7 +158,7 @@ function syncArtboard(artboard, options) {
 					displayError(error.request);
 				} else {
 					// Something happened in setting up the request that triggered an Error
-					console.log('Error', error.message);
+					console.log('Error — No artboard', error.message);
 					displayError('There\'s an error in the selected options.\n\n' + error.message);
 				}
 				console.log(error.config);

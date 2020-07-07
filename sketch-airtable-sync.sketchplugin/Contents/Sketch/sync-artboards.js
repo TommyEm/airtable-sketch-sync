@@ -11021,7 +11021,7 @@ function createSelect(items, selectedItemIndex, frame) {
 /*!**************************!*\
   !*** ./src/lib/utils.js ***!
   \**************************/
-/*! exports provided: getApiEndpoint, removeEmojis, stripMarkdownFromText */
+/*! exports provided: getApiEndpoint, removeEmojis, stripMarkdownFromText, getCleanArtboardName */
 /***/ (function(module, __webpack_exports__, __webpack_require__) {
 
 "use strict";
@@ -11029,6 +11029,7 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "getApiEndpoint", function() { return getApiEndpoint; });
 /* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "removeEmojis", function() { return removeEmojis; });
 /* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "stripMarkdownFromText", function() { return stripMarkdownFromText; });
+/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "getCleanArtboardName", function() { return getCleanArtboardName; });
 function getApiEndpoint(base, table, maxRecords, view, APIKey) {
   return encodeURI("https://api.airtable.com/v0/".concat(base, "/").concat(table, "?maxRecords=").concat(maxRecords, "&view=").concat(view, "&api_key=").concat(APIKey));
 }
@@ -11067,6 +11068,11 @@ function stripMarkdownFromText(data, accData) {
       return accData;
     }
   }, []);
+}
+function getCleanArtboardName(name) {
+  var reg = /([^—]+)/;
+  var regArray = name.match(reg);
+  return regArray[1];
 }
 
 /***/ }),
@@ -11173,6 +11179,7 @@ var _require5 = __webpack_require__(/*! ./defaults */ "./src/defaults.js"),
 
 var _require6 = __webpack_require__(/*! ./lib/utils */ "./src/lib/utils.js"),
     getApiEndpoint = _require6.getApiEndpoint,
+    getCleanArtboardName = _require6.getCleanArtboardName,
     removeEmojis = _require6.removeEmojis,
     stripMarkdownFromText = _require6.stripMarkdownFromText;
 
@@ -11237,7 +11244,8 @@ function syncSelectedArtboards(context) {
  */
 
 function syncArtboard(artboard, options) {
-  var table = artboard.name;
+  var table = getCleanArtboardName(artboard.name);
+  console.log(table);
   var base = bases[options.base];
   var commonDataApiEndpoint = getApiEndpoint(base, 'Global Template', options.maxRecords, options.view, pluginSettings.APIKey);
   var commonData;
@@ -11268,7 +11276,7 @@ function syncArtboard(artboard, options) {
       syncLayer(artboard, commonData, options, []);
       syncLayer(artboard, data, options, []);
     }).then(function () {
-      log('DONE');
+      log('Artboard synced');
     }).catch(function (error) {
       if (error.response) {
         console.log(error.response.data);
@@ -11278,7 +11286,7 @@ function syncArtboard(artboard, options) {
         displayError(error.request);
       } else {
         // Something happened in setting up the request that triggered an Error
-        console.log('Error', error.message);
+        console.log('Error — No artboard', error.message);
         displayError('There\'s an error in the selected options.\n\n' + error.message);
       }
 

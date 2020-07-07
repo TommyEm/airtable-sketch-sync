@@ -11021,7 +11021,7 @@ function createSelect(items, selectedItemIndex, frame) {
 /*!**************************!*\
   !*** ./src/lib/utils.js ***!
   \**************************/
-/*! exports provided: getApiEndpoint, removeEmojis, stripMarkdownFromText */
+/*! exports provided: getApiEndpoint, removeEmojis, stripMarkdownFromText, getCleanArtboardName */
 /***/ (function(module, __webpack_exports__, __webpack_require__) {
 
 "use strict";
@@ -11029,6 +11029,7 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "getApiEndpoint", function() { return getApiEndpoint; });
 /* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "removeEmojis", function() { return removeEmojis; });
 /* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "stripMarkdownFromText", function() { return stripMarkdownFromText; });
+/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "getCleanArtboardName", function() { return getCleanArtboardName; });
 function getApiEndpoint(base, table, maxRecords, view, APIKey) {
   return encodeURI("https://api.airtable.com/v0/".concat(base, "/").concat(table, "?maxRecords=").concat(maxRecords, "&view=").concat(view, "&api_key=").concat(APIKey));
 }
@@ -11067,6 +11068,11 @@ function stripMarkdownFromText(data, accData) {
       return accData;
     }
   }, []);
+}
+function getCleanArtboardName(name) {
+  var reg = /([^—]+)/;
+  var regArray = name.match(reg);
+  return regArray[1];
 }
 
 /***/ }),

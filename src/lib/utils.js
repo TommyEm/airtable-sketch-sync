@@ -46,3 +46,11 @@ export function stripMarkdownFromText(data, accData) {
 		}
 	}, []);
 }
+
+
+
+export function getCleanArtboardName(name) {
+	const reg = /([^—]+)/;
+	const regArray = name.match(reg);
+	return regArray[1];
+}

@@ -97,9 +97,7 @@ export function syncSelectedArtboards(context) {
  */
 function syncArtboard(artboard, options) {
 	const table = getCleanArtboardName(artboard.name);
-	console.log(table);
 	const base = bases[options.base];
-
 
 	const commonDataApiEndpoint = getApiEndpoint(
 		base,
@@ -198,7 +196,7 @@ function syncLayer(parentLayers, data, options, layersHierarchy) {
 
 					layer.overrides.forEach(override => {
 						if (
-							override.affectedLayer.type === 'SymbolInstance' ||
+							// override.affectedLayer.type === 'SymbolInstance' ||
 							override.affectedLayer.type === 'Text'
 						) {
 							// We need to get the full and clean name of the override

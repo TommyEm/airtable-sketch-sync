@@ -11245,7 +11245,6 @@ function syncSelectedArtboards(context) {
 
 function syncArtboard(artboard, options) {
   var table = getCleanArtboardName(artboard.name);
-  console.log(table);
   var base = bases[options.base];
   var commonDataApiEndpoint = getApiEndpoint(base, 'Global Template', options.maxRecords, options.view, pluginSettings.APIKey);
   var commonData;
@@ -11323,7 +11322,8 @@ function syncLayer(parentLayers, data, options, layersHierarchy) {
         case 'SymbolInstance':
           var symbolName = layer.name;
           layer.overrides.forEach(function (override) {
-            if (override.affectedLayer.type === 'SymbolInstance' || override.affectedLayer.type === 'Text') {
+            if ( // override.affectedLayer.type === 'SymbolInstance' ||
+            override.affectedLayer.type === 'Text') {
               // We need to get the full and clean name of the override
               var _layerFullPath = layersHierarchy.join(' / ');
 

@@ -27,6 +27,7 @@
       "name": "📝 Sync selected artboards",
       "identifier": "sketch-airtable-sync.sync-selected-artboards-identifier",
       "script": "sync-artboards.js",
+      "shortcut": "cmd shift d",
       "handlers": {
         "run": "syncSelectedArtboards"
       },

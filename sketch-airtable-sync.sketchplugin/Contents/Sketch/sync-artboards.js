@@ -11444,6 +11444,26 @@ function getForeignSymbolMasters(document) {
   });
   return symbolMasters;
 }
+
+function getForeignGroupedLayerNameWithID(layerID, groupedLayers) {
+  var match;
+  var layerName;
+
+  for (var i = 0; i <= groupedLayers.length; i++) {
+    var objectID = groupedLayers[i].objectID();
+
+    if (objectID == layerID) {
+      layerName = groupedLayers[i].name();
+      match = true;
+    }
+
+    if (match) {
+      break;
+    }
+  }
+
+  return layerName;
+}
 /**
  * Get the name of layer from a library symbol
  * @param {string} layerID
@@ -11465,9 +11485,20 @@ function getForeignLayerNameWithID(layerID, masters) {
       match = master.sketchObject.layers().find(function (layer) {
         if (layer.objectID() == layerID) {
           layerName = layer.name();
+        } else if (layer.layers) {
+          layerName = getForeignGroupedLayerNameWithID(layerID, layer.layers());
         }
 
-        return layer.objectID() == layerID;
+        return layer.objectID() == layerID; // TODO: not working with grouped layers
+        // setTimeout(() => {
+        // 	if (layer.objectID() == layerID) {
+        // 		layerName = layer.name();
+        // 	// } else if (layer.layers) {
+        // 	// 	layerName = getForeignGroupedLayerNameWithID(layerID, layer.layers());
+        // 	}
+        // 	return layer.objectID() == layerID;
+        // 	// return layerName;
+        // }, 150)
       });
 
       if (match) {

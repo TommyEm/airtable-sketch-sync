@@ -1,6 +1,7 @@
 const sketch = require('sketch');
 const document = require('sketch/dom').getSelectedDocument();
 const { SymbolMaster } = require('sketch/dom');
+const Bluebird = require('bluebird');
 const { pluginSettings } = require('./settings');
 const { bases } = require('./secret');
 const { getUserOptions, displayError } = require('./lib/alert');
@@ -106,12 +107,30 @@ function syncArtboard(artboard, options) {
 		options.view,
 		pluginSettings.APIKey,
 	);
-	let commonData;
 
-	fetch(commonDataApiEndpoint)
-		.then((res) => res.json())
-		.then((data) => {
-			commonData = data;
+	return new Bluebird((resolve, reject) => {
+		fetch(commonDataApiEndpoint)
+			.then((res) => resolve(res.json()))
+	})
+		.delay(1000)
+		.then(commonData => {
+			const apiEndpoint = getApiEndpoint(
+				base,
+				table,
+				options.maxRecords,
+				options.view,
+				pluginSettings.APIKey,
+			);
+
+			return fetch(apiEndpoint)
+				.then((res) => res.json())
+				.then((data) => {
+					return syncLayer(artboard, { records: [...commonData.records, ...data.records] }, options, []);
+				});
+		})
+		.then(() => {
+			log('Artboard synced');
+			return 'Sindbad';
 		})
 		.catch((error) => {
 			if (error.response) {
@@ -122,47 +141,12 @@ function syncArtboard(artboard, options) {
 				displayError(error.request);
 			} else {
 				// Something happened in setting up the request that triggered an Error
-				console.log('Error', error.message);
-				displayError(error.message);
+				console.log('Error — No artboard', error.message);
+				displayError('There\'s an error in the selected options.\n\n' + error.message);
 			}
 			console.log(error.config);
 		});
 
-
-	setTimeout(() => {
-		const apiEndpoint = getApiEndpoint(
-			base,
-			table,
-			options.maxRecords,
-			options.view,
-			pluginSettings.APIKey,
-		);
-
-		fetch(apiEndpoint)
-			.then((res) => res.json())
-			.then((data) => {
-				syncLayer(artboard, commonData, options, []);
-				syncLayer(artboard, data, options, []);
-			})
-			.then(() => {
-				log('Artboard synced');
-			})
-			.catch((error) => {
-				if (error.response) {
-					console.log(error.response.data);
-					displayError(error.response.data);
-				} else if (error.request) {
-					console.log(error.request);
-					displayError(error.request);
-				} else {
-					// Something happened in setting up the request that triggered an Error
-					console.log('Error — No artboard', error.message);
-					displayError('There\'s an error in the selected options.\n\n' + error.message);
-				}
-				console.log(error.config);
-			});
-
-	}, 1050);
 }
 
 
@@ -331,6 +315,13 @@ function getForeignSymbolMasters(document) {
 }
 
 
+
+/**
+ * Get the name of layer inside a group
+ * @param {string} layerID
+ * @param {object} groupedLayers
+ * @returns {string}
+ */
 function getForeignGroupedLayerNameWithID(layerID, groupedLayers) {
 	let layerName;
 

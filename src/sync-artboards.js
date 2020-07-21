@@ -332,19 +332,21 @@ function getForeignSymbolMasters(document) {
 
 
 function getForeignGroupedLayerNameWithID(layerID, groupedLayers) {
-	let match;
 	let layerName;
 
-	for (let i = 0; i <= groupedLayers.length; i++) {
+	loop1:
+	for (let i = 0; i < groupedLayers.length; i++) {
 		const objectID = groupedLayers[i].objectID();
 
 		if (objectID == layerID) {
 			layerName = groupedLayers[i].name();
-			match = true;
+
+		// } else if (typeof groupedLayers[i].layers === 'function') {
+		// 	layerName = getForeignGroupedLayerNameWithID(layerID, groupedLayers[i].layers())
 		}
 
-		if (match) {
-			break;
+		if (!!layerName) {
+			break loop1;
 		}
 	}
 	return layerName;
@@ -360,30 +362,22 @@ function getForeignGroupedLayerNameWithID(layerID, groupedLayers) {
 function getForeignLayerNameWithID(layerID, masters) {
 	let match;
 	let layerName;
+	loop2:
 	for (let master of masters) {
 		match = master.sketchObject.layers().find(layer => {
 			if (layer.objectID() == layerID) {
 				layerName = layer.name();
+				return true;
+
 			} else if (layer.layers) {
 				layerName = getForeignGroupedLayerNameWithID(layerID, layer.layers());
+				return true;
 			}
-			return layer.objectID() == layerID; // TODO: not working with grouped layers
 
-			// setTimeout(() => {
-			// 	if (layer.objectID() == layerID) {
-			// 		layerName = layer.name();
-
-			// 	// } else if (layer.layers) {
-			// 	// 	layerName = getForeignGroupedLayerNameWithID(layerID, layer.layers());
-			// 	}
-
-			// 	return layer.objectID() == layerID;
-			// 	// return layerName;
-
-			// }, 150)
+			return false;
 		});
-		if (match) {
-			break;
+		if (!!layerName) {
+			break loop2;
 		}
 	}
 	return layerName;

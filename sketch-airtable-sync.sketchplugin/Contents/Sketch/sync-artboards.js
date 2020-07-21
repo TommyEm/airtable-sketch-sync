@@ -11446,19 +11446,18 @@ function getForeignSymbolMasters(document) {
 }
 
 function getForeignGroupedLayerNameWithID(layerID, groupedLayers) {
-  var match;
   var layerName;
 
-  for (var i = 0; i <= groupedLayers.length; i++) {
+  loop1: for (var i = 0; i < groupedLayers.length; i++) {
     var objectID = groupedLayers[i].objectID();
 
     if (objectID == layerID) {
-      layerName = groupedLayers[i].name();
-      match = true;
+      layerName = groupedLayers[i].name(); // } else if (typeof groupedLayers[i].layers === 'function') {
+      // 	layerName = getForeignGroupedLayerNameWithID(layerID, groupedLayers[i].layers())
     }
 
-    if (match) {
-      break;
+    if (!!layerName) {
+      break loop1;
     }
   }
 
@@ -11480,29 +11479,22 @@ function getForeignLayerNameWithID(layerID, masters) {
       _step;
 
   try {
-    for (_iterator.s(); !(_step = _iterator.n()).done;) {
+    loop2: for (_iterator.s(); !(_step = _iterator.n()).done;) {
       var master = _step.value;
       match = master.sketchObject.layers().find(function (layer) {
         if (layer.objectID() == layerID) {
           layerName = layer.name();
+          return true;
         } else if (layer.layers) {
           layerName = getForeignGroupedLayerNameWithID(layerID, layer.layers());
+          return true;
         }
 
-        return layer.objectID() == layerID; // TODO: not working with grouped layers
-        // setTimeout(() => {
-        // 	if (layer.objectID() == layerID) {
-        // 		layerName = layer.name();
-        // 	// } else if (layer.layers) {
-        // 	// 	layerName = getForeignGroupedLayerNameWithID(layerID, layer.layers());
-        // 	}
-        // 	return layer.objectID() == layerID;
-        // 	// return layerName;
-        // }, 150)
+        return false;
       });
 
-      if (match) {
-        break;
+      if (!!layerName) {
+        break loop2;
       }
     }
   } catch (err) {

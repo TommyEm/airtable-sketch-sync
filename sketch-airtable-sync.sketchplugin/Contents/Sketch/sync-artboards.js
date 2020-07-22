@@ -16739,7 +16739,6 @@ function syncSelectedArtboards(context) {
           displayError('No artboards are selected. Please select one or more.');
         }
       });
-      sketch.UI.message('Sync finished!');
     }
   }
 }
@@ -16768,7 +16767,8 @@ function syncArtboard(artboard, options) {
     });
   }).then(function () {
     log('Artboard synced');
-    return 'Sindbad';
+    sketch.UI.message('Sync finished!');
+    return 'Artboard synced';
   }).catch(function (error) {
     if (error.response) {
       console.log(error.response.data);
@@ -16778,7 +16778,7 @@ function syncArtboard(artboard, options) {
       displayError(error.request);
     } else {
       // Something happened in setting up the request that triggered an Error
-      console.log('Error — No artboard', error.message);
+      console.log('Error', error.message);
       displayError('There\'s an error in the selected options.\n\n' + error.message);
     }
 
@@ -16933,32 +16933,6 @@ function getForeignSymbolMasters(document) {
   return symbolMasters;
 }
 /**
- * Get the name of layer inside a group
- * @param {string} layerID
- * @param {object} groupedLayers
- * @returns {string}
- */
-
-
-function getForeignGroupedLayerNameWithID(layerID, groupedLayers) {
-  var layerName;
-
-  loop1: for (var i = 0; i < groupedLayers.length; i++) {
-    var objectID = groupedLayers[i].objectID();
-
-    if (objectID == layerID) {
-      layerName = groupedLayers[i].name(); // } else if (typeof groupedLayers[i].layers === 'function') {
-      // 	layerName = getForeignGroupedLayerNameWithID(layerID, groupedLayers[i].layers())
-    }
-
-    if (!!layerName) {
-      break loop1;
-    }
-  }
-
-  return layerName;
-}
-/**
  * Get the name of layer from a library symbol
  * @param {string} layerID
  * @param {object} masters
@@ -16974,7 +16948,7 @@ function getForeignLayerNameWithID(layerID, masters) {
       _step;
 
   try {
-    loop2: for (_iterator.s(); !(_step = _iterator.n()).done;) {
+    loop1: for (_iterator.s(); !(_step = _iterator.n()).done;) {
       var master = _step.value;
       match = master.sketchObject.layers().find(function (layer) {
         if (layer.objectID() == layerID) {
@@ -16989,13 +16963,40 @@ function getForeignLayerNameWithID(layerID, masters) {
       });
 
       if (!!layerName) {
-        break loop2;
+        break loop1;
       }
     }
   } catch (err) {
     _iterator.e(err);
   } finally {
     _iterator.f();
+  }
+
+  return layerName;
+}
+/**
+ * Get the name of layer inside a group
+ * @param {string} layerID
+ * @param {object} groupedLayers
+ * @returns {string}
+ */
+
+
+function getForeignGroupedLayerNameWithID(layerID, groupedLayers) {
+  var layerName;
+
+  loop2: for (var i = 0; i < groupedLayers.length; i++) {
+    var objectID = groupedLayers[i].objectID();
+
+    if (objectID == layerID) {
+      layerName = groupedLayers[i].name();
+    } else if (typeof groupedLayers[i].layers === 'function') {
+      layerName = getForeignGroupedLayerNameWithID(layerID, groupedLayers[i].layers());
+    }
+
+    if (!!layerName) {
+      break loop2;
+    }
   }
 
   return layerName;

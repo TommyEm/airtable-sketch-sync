@@ -84,7 +84,6 @@ export function syncSelectedArtboards(context) {
 				}
 
 			});
-			sketch.UI.message('Sync finished!');
 		}
 
 	}
@@ -130,7 +129,8 @@ function syncArtboard(artboard, options) {
 		})
 		.then(() => {
 			log('Artboard synced');
-			return 'Sindbad';
+			sketch.UI.message('Sync finished!');
+			return 'Artboard synced';
 		})
 		.catch((error) => {
 			if (error.response) {
@@ -141,7 +141,7 @@ function syncArtboard(artboard, options) {
 				displayError(error.request);
 			} else {
 				// Something happened in setting up the request that triggered an Error
-				console.log('Error — No artboard', error.message);
+				console.log('Error', error.message);
 				displayError('There\'s an error in the selected options.\n\n' + error.message);
 			}
 			console.log(error.config);
@@ -315,35 +315,6 @@ function getForeignSymbolMasters(document) {
 }
 
 
-
-/**
- * Get the name of layer inside a group
- * @param {string} layerID
- * @param {object} groupedLayers
- * @returns {string}
- */
-function getForeignGroupedLayerNameWithID(layerID, groupedLayers) {
-	let layerName;
-
-	loop1:
-	for (let i = 0; i < groupedLayers.length; i++) {
-		const objectID = groupedLayers[i].objectID();
-
-		if (objectID == layerID) {
-			layerName = groupedLayers[i].name();
-
-		// } else if (typeof groupedLayers[i].layers === 'function') {
-		// 	layerName = getForeignGroupedLayerNameWithID(layerID, groupedLayers[i].layers())
-		}
-
-		if (!!layerName) {
-			break loop1;
-		}
-	}
-	return layerName;
-}
-
-
 /**
  * Get the name of layer from a library symbol
  * @param {string} layerID
@@ -353,7 +324,7 @@ function getForeignGroupedLayerNameWithID(layerID, groupedLayers) {
 function getForeignLayerNameWithID(layerID, masters) {
 	let match;
 	let layerName;
-	loop2:
+	loop1:
 	for (let master of masters) {
 		match = master.sketchObject.layers().find(layer => {
 			if (layer.objectID() == layerID) {
@@ -367,6 +338,34 @@ function getForeignLayerNameWithID(layerID, masters) {
 
 			return false;
 		});
+		if (!!layerName) {
+			break loop1;
+		}
+	}
+	return layerName;
+}
+
+
+/**
+ * Get the name of layer inside a group
+ * @param {string} layerID
+ * @param {object} groupedLayers
+ * @returns {string}
+ */
+function getForeignGroupedLayerNameWithID(layerID, groupedLayers) {
+	let layerName;
+
+	loop2:
+	for (let i = 0; i < groupedLayers.length; i++) {
+		const objectID = groupedLayers[i].objectID();
+
+		if (objectID == layerID) {
+			layerName = groupedLayers[i].name();
+
+		} else if (typeof groupedLayers[i].layers === 'function') {
+			layerName = getForeignGroupedLayerNameWithID(layerID, groupedLayers[i].layers());
+		}
+
 		if (!!layerName) {
 			break loop2;
 		}

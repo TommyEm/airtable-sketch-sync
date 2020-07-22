@@ -316,65 +316,6 @@ function getForeignSymbolMasters(document) {
 
 
 /**
- * Get the name of layer from a library symbol
- * @param {string} layerID
- * @param {object} masters
- * @returns {string}
- */
-function getForeignLayerNameWithID(layerID, masters) {
-	let match;
-	let layerName;
-	loop1:
-	for (let master of masters) {
-		match = master.sketchObject.layers().find(layer => {
-			if (layer.objectID() == layerID) {
-				layerName = layer.name();
-				return true;
-
-			} else if (layer.layers) {
-				layerName = getForeignGroupedLayerNameWithID(layerID, layer.layers());
-				return true;
-			}
-
-			return false;
-		});
-		if (!!layerName) {
-			break loop1;
-		}
-	}
-	return layerName;
-}
-
-
-/**
- * Get the name of layer inside a group
- * @param {string} layerID
- * @param {object} groupedLayers
- * @returns {string}
- */
-function getForeignGroupedLayerNameWithID(layerID, groupedLayers) {
-	let layerName;
-
-	loop2:
-	for (let i = 0; i < groupedLayers.length; i++) {
-		const objectID = groupedLayers[i].objectID();
-
-		if (objectID == layerID) {
-			layerName = groupedLayers[i].name();
-
-		} else if (typeof groupedLayers[i].layers === 'function') {
-			layerName = getForeignGroupedLayerNameWithID(layerID, groupedLayers[i].layers());
-		}
-
-		if (!!layerName) {
-			break loop2;
-		}
-	}
-	return layerName;
-}
-
-
-/**
  * Get the full and clean name of an override. Supports local and library symbols
  * @param {string} symbolName
  * @param {object} override
@@ -402,6 +343,71 @@ function getOverrideFullName(symbolName, override) {
 	});
 
 	return overrideNameHierarchy.join(' / ');
+}
+
+
+/**
+ * Get the name of layer from a library symbol
+ * @param {string} layerID
+ * @param {object} masters
+ * @returns {string}
+ */
+function getForeignLayerNameWithID(layerID, masters) {
+	let layerName;
+
+	loop1:
+	for (let master of masters) {
+		const layers = master.sketchObject.layers();
+
+		loop2:
+		for (let i = 0; i < layers.length; i++) {
+
+			if (layers[i].objectID() == layerID) {
+				layerName = layers[i].name();
+
+			} else if (layers[i].layers) {
+				layerName = getForeignGroupedLayerNameWithID(layerID, layers[i].layers());
+			}
+
+			if (!!layerName) {
+				break loop2;
+			}
+		}
+
+		if (!!layerName) {
+			break loop1;
+		}
+	}
+
+	return layerName;
+}
+
+
+/**
+ * Get the name of layer inside a group
+ * @param {string} layerID
+ * @param {object} groupedLayers
+ * @returns {string}
+ */
+function getForeignGroupedLayerNameWithID(layerID, groupedLayers) {
+	let layerName;
+
+	loop3:
+	for (let i = 0; i < groupedLayers.length; i++) {
+		const objectID = groupedLayers[i].objectID();
+
+		if (objectID == layerID) {
+			layerName = groupedLayers[i].name();
+
+		} else if (typeof groupedLayers[i].layers === 'function') {
+			layerName = getForeignGroupedLayerNameWithID(layerID, groupedLayers[i].layers());
+		}
+
+		if (!!layerName) {
+			break loop3;
+		}
+	}
+	return layerName;
 }
 
 

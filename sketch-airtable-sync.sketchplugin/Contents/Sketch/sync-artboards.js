@@ -16933,75 +16933,6 @@ function getForeignSymbolMasters(document) {
   return symbolMasters;
 }
 /**
- * Get the name of layer from a library symbol
- * @param {string} layerID
- * @param {object} masters
- * @returns {string}
- */
-
-
-function getForeignLayerNameWithID(layerID, masters) {
-  var match;
-  var layerName;
-
-  var _iterator = _createForOfIteratorHelper(masters),
-      _step;
-
-  try {
-    loop1: for (_iterator.s(); !(_step = _iterator.n()).done;) {
-      var master = _step.value;
-      match = master.sketchObject.layers().find(function (layer) {
-        if (layer.objectID() == layerID) {
-          layerName = layer.name();
-          return true;
-        } else if (layer.layers) {
-          layerName = getForeignGroupedLayerNameWithID(layerID, layer.layers());
-          return true;
-        }
-
-        return false;
-      });
-
-      if (!!layerName) {
-        break loop1;
-      }
-    }
-  } catch (err) {
-    _iterator.e(err);
-  } finally {
-    _iterator.f();
-  }
-
-  return layerName;
-}
-/**
- * Get the name of layer inside a group
- * @param {string} layerID
- * @param {object} groupedLayers
- * @returns {string}
- */
-
-
-function getForeignGroupedLayerNameWithID(layerID, groupedLayers) {
-  var layerName;
-
-  loop2: for (var i = 0; i < groupedLayers.length; i++) {
-    var objectID = groupedLayers[i].objectID();
-
-    if (objectID == layerID) {
-      layerName = groupedLayers[i].name();
-    } else if (typeof groupedLayers[i].layers === 'function') {
-      layerName = getForeignGroupedLayerNameWithID(layerID, groupedLayers[i].layers());
-    }
-
-    if (!!layerName) {
-      break loop2;
-    }
-  }
-
-  return layerName;
-}
-/**
  * Get the full and clean name of an override. Supports local and library symbols
  * @param {string} symbolName
  * @param {object} override
@@ -17027,6 +16958,76 @@ function getOverrideFullName(symbolName, override) {
     overrideNameHierarchy.push(overrideName);
   });
   return overrideNameHierarchy.join(' / ');
+}
+/**
+ * Get the name of layer from a library symbol
+ * @param {string} layerID
+ * @param {object} masters
+ * @returns {string}
+ */
+
+
+function getForeignLayerNameWithID(layerID, masters) {
+  var layerName;
+
+  var _iterator = _createForOfIteratorHelper(masters),
+      _step;
+
+  try {
+    loop1: for (_iterator.s(); !(_step = _iterator.n()).done;) {
+      var master = _step.value;
+      var layers = master.sketchObject.layers();
+
+      loop2: for (var i = 0; i < layers.length; i++) {
+        if (layers[i].objectID() == layerID) {
+          layerName = layers[i].name();
+        } else if (layers[i].layers) {
+          layerName = getForeignGroupedLayerNameWithID(layerID, layers[i].layers());
+        }
+
+        if (!!layerName) {
+          break loop2;
+        }
+      }
+
+      if (!!layerName) {
+        break loop1;
+      }
+    }
+  } catch (err) {
+    _iterator.e(err);
+  } finally {
+    _iterator.f();
+  }
+
+  return layerName;
+}
+/**
+ * Get the name of layer inside a group
+ * @param {string} layerID
+ * @param {object} groupedLayers
+ * @returns {string}
+ */
+
+
+function getForeignGroupedLayerNameWithID(layerID, groupedLayers) {
+  var layerName;
+
+  loop3: for (var i = 0; i < groupedLayers.length; i++) {
+    var objectID = groupedLayers[i].objectID();
+
+    if (objectID == layerID) {
+      layerName = groupedLayers[i].name();
+    } else if (typeof groupedLayers[i].layers === 'function') {
+      layerName = getForeignGroupedLayerNameWithID(layerID, groupedLayers[i].layers());
+    }
+
+    if (!!layerName) {
+      break loop3;
+    }
+  }
+
+  return layerName;
 }
 /**
  * Checks for data sub objects and converts markdown styles into Objective-C format

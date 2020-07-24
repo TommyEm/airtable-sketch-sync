@@ -11069,6 +11069,12 @@ function stripMarkdownFromText(data, accData) {
     }
   }, []);
 }
+/**
+ * Returns the substring from the beginning of a string, until an eventual "—" character
+ * @param {string} name
+ * @returns {string}
+ */
+
 function getCleanArtboardName(name) {
   var reg = /([^—]+)/;
   var regArray = name.match(reg);

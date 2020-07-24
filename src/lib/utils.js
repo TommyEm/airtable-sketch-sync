@@ -49,6 +49,11 @@ export function stripMarkdownFromText(data, accData) {
 
 
 
+/**
+ * Returns the substring from the beginning of a string, until an eventual "—" character
+ * @param {string} name
+ * @returns {string}
+ */
 export function getCleanArtboardName(name) {
 	const reg = /([^—]+)/;
 	const regArray = name.match(reg);

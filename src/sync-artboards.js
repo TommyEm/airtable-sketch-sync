@@ -90,6 +90,72 @@ export function syncSelectedArtboards(context) {
 }
 
 
+export function resetSelectedArtboards(context) {
+	log('Clean up');
+
+	// No artboard selected
+	if (document.selectedLayers.isEmpty) {
+		displayError('No artboards are selected. Please select one or more.');
+
+	// Artboards selected OK
+	} else {
+
+		document.selectedLayers.forEach(layer => {
+
+			if (layer.type === 'Artboard') {
+				log('Artboard');
+				resetArtboard(layer);
+
+			} else {
+				log(layer.name);
+				displayError('No artboards are selected. Please select one or more.');
+			}
+
+		});
+
+	}
+
+}
+
+
+/**
+ * Insert a placeholder value into each nested text layer and override
+ * @param {object} parentLayers
+ */
+function resetArtboard(parentLayers) {
+
+	parentLayers.layers.forEach(layer => {
+		if (layer.hidden === false) { // We don't sync hidden layers
+
+			switch (layer.type) {
+				case 'SymbolInstance':
+					layer.overrides.forEach(override => {
+						if (
+							override.affectedLayer.type === 'Text'
+						) {
+							override.value = 'Text';
+						}
+					});
+					break;
+
+				case 'Text':
+					layer.text = 'Text';
+					break;
+
+				case 'Group':
+					resetArtboard(layer);
+					break;
+
+				default:
+					break;
+			}
+
+		}
+	});
+
+}
+
+
 /**
  * Sync a single artboard
  * @param {object} artboard

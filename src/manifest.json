@@ -34,6 +34,15 @@
       "description": "Sync content with Airtable on selected artboards."
     },
     {
+      "name": "📝 Reset selected artboards",
+      "identifier": "sketch-airtable-sync.reset-selected-artboards-identifier",
+	  "script": "sync-artboards.js",
+      "handlers": {
+        "run": "resetSelectedArtboards"
+      },
+      "description": "Reset text layers on selected artboards."
+    },
+    {
       "name": "⚙️ Settings",
       "identifier": "sketch-airtable-sync.settings-identifier",
       "script": "settings.js"
@@ -44,7 +53,8 @@
     "items": [
       "sketch-airtable-sync.settings-identifier",
       "sketch-airtable-sync.sync-all-artboards-identifier",
-      "sketch-airtable-sync.sync-selected-artboards-identifier"
+	  "sketch-airtable-sync.sync-selected-artboards-identifier",
+	  "sketch-airtable-sync.reset-selected-artboards-identifier"
     ]
   }
 }

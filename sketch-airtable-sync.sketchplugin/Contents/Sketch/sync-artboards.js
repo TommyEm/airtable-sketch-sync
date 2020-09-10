@@ -16644,13 +16644,14 @@ if (pluginSettings) {
 /*!*******************************!*\
   !*** ./src/sync-artboards.js ***!
   \*******************************/
-/*! exports provided: syncAllArtboards, syncSelectedArtboards */
+/*! exports provided: syncAllArtboards, syncSelectedArtboards, resetSelectedArtboards */
 /***/ (function(module, __webpack_exports__, __webpack_require__) {
 
 "use strict";
 __webpack_require__.r(__webpack_exports__);
 /* WEBPACK VAR INJECTION */(function(fetch) {/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "syncAllArtboards", function() { return syncAllArtboards; });
 /* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "syncSelectedArtboards", function() { return syncSelectedArtboards; });
+/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "resetSelectedArtboards", function() { return resetSelectedArtboards; });
 function _createForOfIteratorHelper(o) { if (typeof Symbol === "undefined" || o[Symbol.iterator] == null) { if (Array.isArray(o) || (o = _unsupportedIterableToArray(o))) { var i = 0; var F = function F() {}; return { s: F, n: function n() { if (i >= o.length) return { done: true }; return { done: false, value: o[i++] }; }, e: function e(_e) { throw _e; }, f: F }; } throw new TypeError("Invalid attempt to iterate non-iterable instance.\nIn order to be iterable, non-array objects must have a [Symbol.iterator]() method."); } var it, normalCompletion = true, didErr = false, err; return { s: function s() { it = o[Symbol.iterator](); }, n: function n() { var step = it.next(); normalCompletion = step.done; return step; }, e: function e(_e2) { didErr = true; err = _e2; }, f: function f() { try { if (!normalCompletion && it.return != null) it.return(); } finally { if (didErr) throw err; } } }; }
 
 function _toConsumableArray(arr) { return _arrayWithoutHoles(arr) || _iterableToArray(arr) || _unsupportedIterableToArray(arr) || _nonIterableSpread(); }
@@ -16748,11 +16749,61 @@ function syncSelectedArtboards(context) {
     }
   }
 }
+function resetSelectedArtboards(context) {
+  log('Clean up'); // No artboard selected
+
+  if (document.selectedLayers.isEmpty) {
+    displayError('No artboards are selected. Please select one or more.'); // Artboards selected OK
+  } else {
+    document.selectedLayers.forEach(function (layer) {
+      if (layer.type === 'Artboard') {
+        log('Artboard');
+        resetArtboard(layer);
+      } else {
+        log(layer.name);
+        displayError('No artboards are selected. Please select one or more.');
+      }
+    });
+  }
+}
+/**
+ * Insert a placeholder value into each nested text layer and override
+ * @param {object} parentLayers
+ */
+
+function resetArtboard(parentLayers) {
+  parentLayers.layers.forEach(function (layer) {
+    if (layer.hidden === false) {
+      // We don't sync hidden layers
+      switch (layer.type) {
+        case 'SymbolInstance':
+          layer.overrides.forEach(function (override) {
+            if (override.affectedLayer.type === 'Text') {
+              override.value = 'Text';
+            }
+          });
+          break;
+
+        case 'Text':
+          layer.text = 'Text';
+          break;
+
+        case 'Group':
+          resetArtboard(layer);
+          break;
+
+        default:
+          break;
+      }
+    }
+  });
+}
 /**
  * Sync a single artboard
  * @param {object} artboard
  * @param {object} options
  */
+
 
 function syncArtboard(artboard, options) {
   var table = getCleanArtboardName(artboard.name);
@@ -17180,6 +17231,7 @@ module.exports = require("sketch/dom");
 }
 that['syncAllArtboards'] = __skpm_run.bind(this, 'syncAllArtboards');
 that['onRun'] = __skpm_run.bind(this, 'default');
-that['syncSelectedArtboards'] = __skpm_run.bind(this, 'syncSelectedArtboards')
+that['syncSelectedArtboards'] = __skpm_run.bind(this, 'syncSelectedArtboards');
+that['resetSelectedArtboards'] = __skpm_run.bind(this, 'resetSelectedArtboards')
 
 //# sourceMappingURL=sync-artboards.js.map

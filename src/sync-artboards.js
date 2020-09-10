@@ -1,5 +1,6 @@
 const sketch = require('sketch');
 const document = require('sketch/dom').getSelectedDocument();
+const UI = require('sketch/ui');
 const { SymbolMaster } = require('sketch/dom');
 const Bluebird = require('bluebird');
 const { pluginSettings } = require('./settings');
@@ -48,7 +49,7 @@ export function syncAllArtboards(context) {
 			if (currentPage === document.pages.length) {
 				sketch.UI.message('Sync finished');
 			} else {
-				++currentPage;
+				currentPage++;
 			}
 		});
 
@@ -72,18 +73,42 @@ export function syncSelectedArtboards(context) {
 		if (userOptions) {
 			underlineColor = userOptions.underlineColor;
 
-			document.selectedLayers.forEach(layer => {
 
-				if (layer.type === 'Artboard') {
-					log('Artboard');
-					syncArtboard(layer, userOptions);
+			let documentWindow = document.sketchObject.windowControllers()[0].window();
+			let mySheetWindow = NSWindow.alloc().initWithContentRect_styleMask_backing_defer(
+				NSMakeRect(0, 0, 200, 100),
+				(NSWindowStyleMaskTitled | NSWindowStyleMaskDocModalWindow),
+				NSBackingStoreBuffered,
+				true
+			);
+			let progressView = NSProgressIndicator
+				.alloc()
+				.initWithFrame(NSMakeRect(20, 20, 160, 12));
+			progressView.setControlTint(NSBlueControlTint);
+			progressView.startAnimation(true);
+			mySheetWindow.contentView().addSubview(progressView);
+			documentWindow.beginSheet_completionHandler(mySheetWindow, nil);
 
-				} else {
-					log(layer.name);
-					displayError('No artboards are selected. Please select one or more.');
-				}
 
-			});
+			return Bluebird.map(
+				document.selectedLayers.layers,
+				layer => {
+					if (layer.type === 'Artboard') {
+						log('Artboard');
+						return syncArtboard(layer, userOptions);
+
+					} else {
+						log(layer.name);
+						return displayError('No artboards are selected. Please select one or more.');
+					}
+				},
+				{ concurrency: 1 }
+			)
+				.then(() => {
+					console.log('Finished');
+					documentWindow.endSheet(mySheetWindow);
+				});
+
 		}
 
 	}
@@ -147,7 +172,6 @@ function resetArtboard(parentLayers) {
 					break;
 
 				default:
-					break;
 			}
 
 		}
@@ -273,7 +297,6 @@ function syncLayer(parentLayers, data, options, layersHierarchy) {
 					break;
 
 				default:
-					break;
 			}
 
 		}

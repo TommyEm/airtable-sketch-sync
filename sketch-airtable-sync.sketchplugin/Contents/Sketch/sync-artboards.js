@@ -16290,7 +16290,7 @@ function getDefaultOptions() {
     defaultOptions.underlineColor = pluginOptions.underlineColor;
   } else {
     defaultOptions.base = baseNames[0];
-    defaultOptions.maxRecords = 15;
+    defaultOptions.maxRecords = 100;
     defaultOptions.view = views[0];
     defaultOptions.lang = langs[0];
     defaultOptions.underlineColor = '0000FF';
@@ -16670,6 +16670,8 @@ var sketch = __webpack_require__(/*! sketch */ "sketch");
 
 var document = __webpack_require__(/*! sketch/dom */ "sketch/dom").getSelectedDocument();
 
+var UI = __webpack_require__(/*! sketch/ui */ "sketch/ui");
+
 var _require = __webpack_require__(/*! sketch/dom */ "sketch/dom"),
     SymbolMaster = _require.SymbolMaster;
 
@@ -16721,7 +16723,7 @@ function syncAllArtboards(context) {
       if (currentPage === document.pages.length) {
         sketch.UI.message('Sync finished');
       } else {
-        ++currentPage;
+        currentPage++;
       }
     });
   }
@@ -16737,14 +16739,26 @@ function syncSelectedArtboards(context) {
 
     if (userOptions) {
       underlineColor = userOptions.underlineColor;
-      document.selectedLayers.forEach(function (layer) {
+      var documentWindow = document.sketchObject.windowControllers()[0].window();
+      var mySheetWindow = NSWindow.alloc().initWithContentRect_styleMask_backing_defer(NSMakeRect(0, 0, 200, 100), NSWindowStyleMaskTitled | NSWindowStyleMaskDocModalWindow, NSBackingStoreBuffered, true);
+      var progressView = NSProgressIndicator.alloc().initWithFrame(NSMakeRect(20, 20, 160, 12));
+      progressView.setControlTint(NSBlueControlTint);
+      progressView.startAnimation(true);
+      mySheetWindow.contentView().addSubview(progressView);
+      documentWindow.beginSheet_completionHandler(mySheetWindow, nil);
+      return Bluebird.map(document.selectedLayers.layers, function (layer) {
         if (layer.type === 'Artboard') {
           log('Artboard');
-          syncArtboard(layer, userOptions);
+          return syncArtboard(layer, userOptions);
         } else {
           log(layer.name);
-          displayError('No artboards are selected. Please select one or more.');
+          return displayError('No artboards are selected. Please select one or more.');
         }
+      }, {
+        concurrency: 1
+      }).then(function () {
+        console.log('Finished');
+        documentWindow.endSheet(mySheetWindow);
       });
     }
   }
@@ -16793,7 +16807,6 @@ function resetArtboard(parentLayers) {
           break;
 
         default:
-          break;
       }
     }
   });
@@ -16900,7 +16913,6 @@ function syncLayer(parentLayers, data, options, layersHierarchy) {
           break;
 
         default:
-          break;
       }
     }
   });
@@ -17219,6 +17231,17 @@ module.exports = require("sketch");
 /***/ (function(module, exports) {
 
 module.exports = require("sketch/dom");
+
+/***/ }),
+
+/***/ "sketch/ui":
+/*!****************************!*\
+  !*** external "sketch/ui" ***!
+  \****************************/
+/*! no static exports found */
+/***/ (function(module, exports) {
+
+module.exports = require("sketch/ui");
 
 /***/ })
 

@@ -23,7 +23,7 @@ export function getDefaultOptions() {
 
 	} else {
 		defaultOptions.base = baseNames[0];
-		defaultOptions.maxRecords = 15;
+		defaultOptions.maxRecords = 100;
 		defaultOptions.view = views[0];
 		defaultOptions.lang = langs[0];
 		defaultOptions.underlineColor = '0000FF';

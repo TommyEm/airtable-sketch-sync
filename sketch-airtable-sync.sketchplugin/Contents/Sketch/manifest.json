@@ -52,8 +52,10 @@
     "title": "Sketch Airtable Sync",
     "items": [
       "sketch-airtable-sync.settings-identifier",
+      "-",
       "sketch-airtable-sync.sync-all-artboards-identifier",
       "sketch-airtable-sync.sync-selected-artboards-identifier",
+      "-",
       "sketch-airtable-sync.reset-selected-artboards-identifier"
     ]
   },

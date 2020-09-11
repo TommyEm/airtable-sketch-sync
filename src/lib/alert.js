@@ -1,4 +1,5 @@
 const sketch = require('sketch');
+const document = require('sketch/dom').getSelectedDocument();
 const { Settings } = sketch;
 const {
     createBoldLabel,
@@ -237,4 +238,39 @@ export function displayError(message) {
 
 	// Display alert
 	alert.runModal();
+}
+
+
+
+/**
+ * Creates a progress modal
+ * @returns {function}
+ */
+export function progress() {
+	let documentWindow = document.sketchObject.windowControllers()[0].window();
+	let mySheetWindow = NSWindow.alloc().initWithContentRect_styleMask_backing_defer(
+		NSMakeRect(0, 0, 200, 100),
+		(NSWindowStyleMaskTitled | NSWindowStyleMaskDocModalWindow),
+		NSBackingStoreBuffered,
+		true
+	);
+
+	let progressView = NSProgressIndicator
+		.alloc()
+		.initWithFrame(NSMakeRect(20, 20, 160, 12));
+	progressView.setControlTint(NSBlueControlTint);
+	console.log(progressView);
+	progressView.indeterminate = false;
+	progressView.minValue = 0;
+	progressView.maxValue = 100;
+	progressView.doubleValue = 5;
+	progressView.startAnimation(true);
+
+	mySheetWindow.contentView().addSubview(progressView);
+	documentWindow.beginSheet_completionHandler(mySheetWindow, nil);
+
+	return {
+		close: () => documentWindow.endSheet(mySheetWindow),
+		increment: value => progressView.incrementBy(value),
+	};
 }

@@ -16305,7 +16305,7 @@ function getDefaultOptions() {
 /*!**************************!*\
   !*** ./src/lib/alert.js ***!
   \**************************/
-/*! exports provided: getUserOptions, setPlugin, displayError */
+/*! exports provided: getUserOptions, setPlugin, displayError, progress */
 /***/ (function(module, __webpack_exports__, __webpack_require__) {
 
 "use strict";
@@ -16313,7 +16313,10 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "getUserOptions", function() { return getUserOptions; });
 /* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "setPlugin", function() { return setPlugin; });
 /* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "displayError", function() { return displayError; });
+/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "progress", function() { return progress; });
 var sketch = __webpack_require__(/*! sketch */ "sketch");
+
+var document = __webpack_require__(/*! sketch/dom */ "sketch/dom").getSelectedDocument();
 
 var Settings = sketch.Settings;
 
@@ -16455,6 +16458,33 @@ function displayError(message) {
   alert.addButtonWithTitle('OK'); // Display alert
 
   alert.runModal();
+}
+/**
+ * Creates a progress modal
+ * @returns {function}
+ */
+
+function progress() {
+  var documentWindow = document.sketchObject.windowControllers()[0].window();
+  var mySheetWindow = NSWindow.alloc().initWithContentRect_styleMask_backing_defer(NSMakeRect(0, 0, 200, 100), NSWindowStyleMaskTitled | NSWindowStyleMaskDocModalWindow, NSBackingStoreBuffered, true);
+  var progressView = NSProgressIndicator.alloc().initWithFrame(NSMakeRect(20, 20, 160, 12));
+  progressView.setControlTint(NSBlueControlTint);
+  console.log(progressView);
+  progressView.indeterminate = false;
+  progressView.minValue = 0;
+  progressView.maxValue = 100;
+  progressView.doubleValue = 5;
+  progressView.startAnimation(true);
+  mySheetWindow.contentView().addSubview(progressView);
+  documentWindow.beginSheet_completionHandler(mySheetWindow, nil);
+  return {
+    close: function close() {
+      return documentWindow.endSheet(mySheetWindow);
+    },
+    increment: function increment(value) {
+      return progressView.incrementBy(value);
+    }
+  };
 }
 
 /***/ }),
@@ -16685,7 +16715,8 @@ var _require3 = __webpack_require__(/*! ./secret */ "./src/secret.js"),
 
 var _require4 = __webpack_require__(/*! ./lib/alert */ "./src/lib/alert.js"),
     getUserOptions = _require4.getUserOptions,
-    displayError = _require4.displayError;
+    displayError = _require4.displayError,
+    progress = _require4.progress;
 
 var _require5 = __webpack_require__(/*! ./defaults */ "./src/defaults.js"),
     getDefaultOptions = _require5.getDefaultOptions,
@@ -16710,21 +16741,23 @@ function syncAllArtboards(context) {
   var userOptions = getUserOptions(defaultOptions, baseNames, langs);
 
   if (userOptions) {
-    var currentPage = 0; // Get Pages
-
-    document.pages.forEach(function (page) {
-      page.layers.forEach(function (layer) {
-        // Get Artboards
-        if (layer.type === 'Artboard') {
-          syncArtboard(layer, userOptions);
-        }
-      });
-
-      if (currentPage === document.pages.length) {
-        sketch.UI.message('Sync finished');
-      } else {
-        currentPage++;
+    // Launch progress UI
+    var progressModal = progress();
+    var artboards = document.selectedPage.layers.map(function (layer) {
+      if (layer.type === 'Artboard') {
+        return layer;
       }
+    });
+    var increment = (100 - 5) / artboards.length;
+    return Bluebird.map(artboards, function (artboard) {
+      progressModal.increment(increment);
+      return syncArtboard(artboard, userOptions);
+    }, {
+      concurrency: 1
+    }).then(function () {
+      console.log('Finished');
+      sketch.UI.message('Sync finished');
+      progressModal.close();
     });
   }
 }
@@ -16738,17 +16771,19 @@ function syncSelectedArtboards(context) {
     var userOptions = getUserOptions(defaultOptions, baseNames, langs);
 
     if (userOptions) {
-      underlineColor = userOptions.underlineColor;
-      var documentWindow = document.sketchObject.windowControllers()[0].window();
-      var mySheetWindow = NSWindow.alloc().initWithContentRect_styleMask_backing_defer(NSMakeRect(0, 0, 200, 100), NSWindowStyleMaskTitled | NSWindowStyleMaskDocModalWindow, NSBackingStoreBuffered, true);
-      var progressView = NSProgressIndicator.alloc().initWithFrame(NSMakeRect(20, 20, 160, 12));
-      progressView.setControlTint(NSBlueControlTint);
-      progressView.startAnimation(true);
-      mySheetWindow.contentView().addSubview(progressView);
-      documentWindow.beginSheet_completionHandler(mySheetWindow, nil);
-      return Bluebird.map(document.selectedLayers.layers, function (layer) {
+      underlineColor = userOptions.underlineColor; // Launch progress UI
+
+      var progressModal = progress();
+      var artboards = document.selectedLayers.layers.map(function (layer) {
+        if (layer.type === 'Artboard') {
+          return layer;
+        }
+      });
+      var increment = (100 - 5) / artboards.length;
+      return Bluebird.map(artboards, function (layer) {
         if (layer.type === 'Artboard') {
           log('Artboard');
+          progressModal.increment(increment);
           return syncArtboard(layer, userOptions);
         } else {
           log(layer.name);
@@ -16758,7 +16793,7 @@ function syncSelectedArtboards(context) {
         concurrency: 1
       }).then(function () {
         console.log('Finished');
-        documentWindow.endSheet(mySheetWindow);
+        progressModal.close();
       });
     }
   }
@@ -16793,13 +16828,13 @@ function resetArtboard(parentLayers) {
         case 'SymbolInstance':
           layer.overrides.forEach(function (override) {
             if (override.affectedLayer.type === 'Text') {
-              override.value = 'Text';
+              override.value = ' ';
             }
           });
           break;
 
         case 'Text':
-          layer.text = 'Text';
+          layer.text = ' ';
           break;
 
         case 'Group':
@@ -16815,10 +16850,12 @@ function resetArtboard(parentLayers) {
  * Sync a single artboard
  * @param {object} artboard
  * @param {object} options
+ * @param {object} progress
+ * @param {number} progressIncrement
  */
 
 
-function syncArtboard(artboard, options) {
+function syncArtboard(artboard, options, progress, progressIncrement) {
   var table = getCleanArtboardName(artboard.name);
   var base = bases[options.base];
   var commonDataApiEndpoint = getApiEndpoint(base, 'Global Template', options.maxRecords, options.view, pluginSettings.APIKey);
@@ -16837,7 +16874,6 @@ function syncArtboard(artboard, options) {
     });
   }).then(function () {
     log('Artboard synced');
-    sketch.UI.message('Sync finished!');
     return 'Artboard synced';
   }).catch(function (error) {
     if (error.response) {

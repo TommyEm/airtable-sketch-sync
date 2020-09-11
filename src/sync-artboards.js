@@ -5,7 +5,11 @@ const { SymbolMaster } = require('sketch/dom');
 const Bluebird = require('bluebird');
 const { pluginSettings } = require('./settings');
 const { bases } = require('./secret');
-const { getUserOptions, displayError } = require('./lib/alert');
+const {
+	getUserOptions,
+	displayError,
+	progress,
+} = require('./lib/alert');
 const {
 	getDefaultOptions,
 	baseNames,
@@ -25,36 +29,43 @@ const defaultOptions = getDefaultOptions();
 let { underlineColor } = defaultOptions;
 
 
+
 export function syncAllArtboards(context) {
 	log('Sync all artboards on page');
 
 	// Get user options from modal
 	const userOptions = getUserOptions(defaultOptions, baseNames, langs);
 
+
 	if (userOptions) {
 
-		let currentPage = 0;
+		// Launch progress UI
+		const progressModal = progress();
 
-		// Get Pages
-		document.pages.forEach(page => {
-			page.layers.forEach(layer => {
-
-				// Get Artboards
-				if (layer.type === 'Artboard') {
-					syncArtboard(layer, userOptions);
-				}
-
-			});
-
-			if (currentPage === document.pages.length) {
-				sketch.UI.message('Sync finished');
-			} else {
-				currentPage++;
+		const artboards = document.selectedPage.layers.map(layer => {
+			if (layer.type === 'Artboard') {
+				return layer;
 			}
+		});
+		const increment = (100 - 5) / artboards.length;
+
+		return Bluebird.map(
+			artboards,
+			artboard => {
+				progressModal.increment(increment);
+				return syncArtboard(artboard, userOptions)
+			},
+			{ concurrency: 1 }
+
+		).then(() => {
+			console.log('Finished');
+			sketch.UI.message('Sync finished');
+			progressModal.close();
 		});
 
 	}
 }
+
 
 
 export function syncSelectedArtboards(context) {
@@ -73,28 +84,22 @@ export function syncSelectedArtboards(context) {
 		if (userOptions) {
 			underlineColor = userOptions.underlineColor;
 
+			// Launch progress UI
+			const progressModal = progress();
 
-			let documentWindow = document.sketchObject.windowControllers()[0].window();
-			let mySheetWindow = NSWindow.alloc().initWithContentRect_styleMask_backing_defer(
-				NSMakeRect(0, 0, 200, 100),
-				(NSWindowStyleMaskTitled | NSWindowStyleMaskDocModalWindow),
-				NSBackingStoreBuffered,
-				true
-			);
-			let progressView = NSProgressIndicator
-				.alloc()
-				.initWithFrame(NSMakeRect(20, 20, 160, 12));
-			progressView.setControlTint(NSBlueControlTint);
-			progressView.startAnimation(true);
-			mySheetWindow.contentView().addSubview(progressView);
-			documentWindow.beginSheet_completionHandler(mySheetWindow, nil);
-
+			const artboards = document.selectedLayers.layers.map(layer => {
+				if (layer.type === 'Artboard') {
+					return layer;
+				}
+			});
+			const increment = (100 - 5) / artboards.length;
 
 			return Bluebird.map(
-				document.selectedLayers.layers,
+				artboards,
 				layer => {
 					if (layer.type === 'Artboard') {
 						log('Artboard');
+						progressModal.increment(increment);
 						return syncArtboard(layer, userOptions);
 
 					} else {
@@ -106,7 +111,7 @@ export function syncSelectedArtboards(context) {
 			)
 				.then(() => {
 					console.log('Finished');
-					documentWindow.endSheet(mySheetWindow);
+					progressModal.close();
 				});
 
 		}
@@ -155,16 +160,14 @@ function resetArtboard(parentLayers) {
 			switch (layer.type) {
 				case 'SymbolInstance':
 					layer.overrides.forEach(override => {
-						if (
-							override.affectedLayer.type === 'Text'
-						) {
-							override.value = 'Text';
+						if (override.affectedLayer.type === 'Text') {
+							override.value = ' ';
 						}
 					});
 					break;
 
 				case 'Text':
-					layer.text = 'Text';
+					layer.text = ' ';
 					break;
 
 				case 'Group':
@@ -184,8 +187,10 @@ function resetArtboard(parentLayers) {
  * Sync a single artboard
  * @param {object} artboard
  * @param {object} options
+ * @param {object} progress
+ * @param {number} progressIncrement
  */
-function syncArtboard(artboard, options) {
+function syncArtboard(artboard, options, progress, progressIncrement) {
 	const table = getCleanArtboardName(artboard.name);
 	const base = bases[options.base];
 
@@ -219,7 +224,6 @@ function syncArtboard(artboard, options) {
 		})
 		.then(() => {
 			log('Artboard synced');
-			sketch.UI.message('Sync finished!');
 			return 'Artboard synced';
 		})
 		.catch((error) => {

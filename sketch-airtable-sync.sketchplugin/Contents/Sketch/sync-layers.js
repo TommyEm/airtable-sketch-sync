@@ -10805,7 +10805,7 @@ function getDefaultOptions() {
 /*!**************************!*\
   !*** ./src/lib/alert.js ***!
   \**************************/
-/*! exports provided: getUserOptions, setPlugin, displayError */
+/*! exports provided: getUserOptions, setPlugin, displayError, progress */
 /***/ (function(module, __webpack_exports__, __webpack_require__) {
 
 "use strict";
@@ -10813,7 +10813,10 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "getUserOptions", function() { return getUserOptions; });
 /* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "setPlugin", function() { return setPlugin; });
 /* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "displayError", function() { return displayError; });
+/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "progress", function() { return progress; });
 var sketch = __webpack_require__(/*! sketch */ "sketch");
+
+var document = __webpack_require__(/*! sketch/dom */ "sketch/dom").getSelectedDocument();
 
 var Settings = sketch.Settings;
 
@@ -10955,6 +10958,33 @@ function displayError(message) {
   alert.addButtonWithTitle('OK'); // Display alert
 
   alert.runModal();
+}
+/**
+ * Creates a progress modal
+ * @returns {function}
+ */
+
+function progress() {
+  var documentWindow = document.sketchObject.windowControllers()[0].window();
+  var mySheetWindow = NSWindow.alloc().initWithContentRect_styleMask_backing_defer(NSMakeRect(0, 0, 200, 100), NSWindowStyleMaskTitled | NSWindowStyleMaskDocModalWindow, NSBackingStoreBuffered, true);
+  var progressView = NSProgressIndicator.alloc().initWithFrame(NSMakeRect(20, 20, 160, 12));
+  progressView.setControlTint(NSBlueControlTint);
+  console.log(progressView);
+  progressView.indeterminate = false;
+  progressView.minValue = 0;
+  progressView.maxValue = 100;
+  progressView.doubleValue = 5;
+  progressView.startAnimation(true);
+  mySheetWindow.contentView().addSubview(progressView);
+  documentWindow.beginSheet_completionHandler(mySheetWindow, nil);
+  return {
+    close: function close() {
+      return documentWindow.endSheet(mySheetWindow);
+    },
+    increment: function increment(value) {
+      return progressView.incrementBy(value);
+    }
+  };
 }
 
 /***/ }),

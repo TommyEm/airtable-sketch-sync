@@ -37,6 +37,7 @@
       "name": "📝 Reset selected artboards",
       "identifier": "sketch-airtable-sync.reset-selected-artboards-identifier",
 	  "script": "sync-artboards.js",
+	  "shortcut":"cmd shift c",
       "handlers": {
         "run": "resetSelectedArtboards"
       },

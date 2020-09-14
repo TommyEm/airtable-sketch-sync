@@ -259,14 +259,15 @@ function progress() {
   var mySheetWindow = NSWindow.alloc().initWithContentRect_styleMask_backing_defer(NSMakeRect(0, 0, 200, 100), NSWindowStyleMaskTitled | NSWindowStyleMaskDocModalWindow, NSBackingStoreBuffered, true);
   var progressView = NSProgressIndicator.alloc().initWithFrame(NSMakeRect(20, 20, 160, 12));
   progressView.setControlTint(NSBlueControlTint);
-  console.log(progressView);
   progressView.indeterminate = false;
   progressView.minValue = 0;
   progressView.maxValue = 100;
   progressView.doubleValue = 5;
   progressView.startAnimation(true);
   mySheetWindow.contentView().addSubview(progressView);
-  documentWindow.beginSheet_completionHandler(mySheetWindow, nil);
+  documentWindow.beginSheet_completionHandler(mySheetWindow, nil); // TODO: use function generator?
+  // https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Statements/function*
+
   return {
     close: function close() {
       return documentWindow.endSheet(mySheetWindow);

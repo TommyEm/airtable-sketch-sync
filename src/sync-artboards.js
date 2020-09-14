@@ -160,14 +160,20 @@ function resetArtboard(parentLayers) {
 			switch (layer.type) {
 				case 'SymbolInstance':
 					layer.overrides.forEach(override => {
-						if (override.affectedLayer.type === 'Text') {
-							override.value = ' ';
+						if (
+							override.affectedLayer.type === 'Text' &&
+							override.value != '' &&
+							override.value != ' '
+						) {
+							override.value = 'Text';
 						}
 					});
 					break;
 
 				case 'Text':
-					layer.text = ' ';
+					if (layer.text != '' && layer.text != ' ') {
+						layer.text = 'Text';
+					}
 					break;
 
 				case 'Group':
@@ -335,7 +341,7 @@ function updateLayerValue(data, layer, layerName, options, layerFullPath, symbol
 		if (symbolName) {
 			const fullName = layerFullPath + ' / ' + symbolName;
 
-			if (fullName.match(recordNames[0]) && fullName.match(reg)) {
+			if (fullName.match(reg)) {
 				injectValue(record, layer, lang);
 			}
 

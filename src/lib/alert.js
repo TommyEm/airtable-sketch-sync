@@ -259,7 +259,6 @@ export function progress() {
 		.alloc()
 		.initWithFrame(NSMakeRect(20, 20, 160, 12));
 	progressView.setControlTint(NSBlueControlTint);
-	console.log(progressView);
 	progressView.indeterminate = false;
 	progressView.minValue = 0;
 	progressView.maxValue = 100;
@@ -269,6 +268,8 @@ export function progress() {
 	mySheetWindow.contentView().addSubview(progressView);
 	documentWindow.beginSheet_completionHandler(mySheetWindow, nil);
 
+	// TODO: use function generator?
+	// https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Statements/function*
 	return {
 		close: () => documentWindow.endSheet(mySheetWindow),
 		increment: value => progressView.incrementBy(value),

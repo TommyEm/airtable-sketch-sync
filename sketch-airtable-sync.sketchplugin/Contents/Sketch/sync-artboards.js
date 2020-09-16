@@ -16890,6 +16890,7 @@ function syncArtboard(artboard, options, progress, progressIncrement) {
       // Something happened in setting up the request that triggered an Error
       console.log('Error', error.message);
       displayError('There\'s an error in the selected options.\n\n' + error.message);
+      return;
     }
 
     console.log(error.config);
@@ -16927,7 +16928,8 @@ function syncLayer(parentLayers, data, options, layersHierarchy) {
             if ( // override.affectedLayer.type === 'SymbolInstance' ||
             override.affectedLayer.type === 'Text') {
               // We need to get the full and clean name of the override
-              var _layerFullPath = layersHierarchy.join(' / ');
+              var _layerFullPath = layersHierarchy.join(' // '); // 2 slashes so adjacent nested words can be easily targeted by regex
+
 
               var overrideFullName = getOverrideFullName(symbolName, override);
 
@@ -16941,7 +16943,7 @@ function syncLayer(parentLayers, data, options, layersHierarchy) {
 
         case 'Text':
           var layerName = removeEmojis(layer.name);
-          var layerFullPath = layersHierarchy.join(' / ');
+          var layerFullPath = layersHierarchy.join(' // ');
           updateLayerValue(data, layer, layerName, options, layerFullPath);
           break;
 
@@ -16973,28 +16975,31 @@ function updateLayerValue(data, layer, layerName, options, layerFullPath, symbol
 
   data.records.reverse().map(function (record) {
     var recordName = record.fields.Name;
-    var names = recordName.split('/');
-    var recordNames = [];
-    recordNames = names.map(function (name) {
+    var recordNames = recordName.split('/').map(function (name) {
       return name.trim();
-    });
-    var reg = new RegExp(recordNames.join('.*'), 'i'); // Check symbol with nested overrides. Record names must use a / (forward slash) for this.
-    // Template: "Symbol Name / Override Name"
+    }); // const reg = new RegExp(recordNames.join('.*'), 'i');
+
+    var reg = new RegExp(recordNames.join('\\s\/.*\/\\s'), 'i'); // Check symbol with nested overrides. Record names must use a / (forward slash) for this.
+    // Template: "Symbol Name / Override Nested Name"
 
     if (symbolName) {
-      var fullName = layerFullPath + ' / ' + symbolName;
+      // console.log('reg', reg);
+      var fullName = layerFullPath + ' // ' + symbolName;
 
       if (fullName.match(reg)) {
         injectValue(record, layer, lang);
       } // Check nested and non-nested layers
 
     } else {
-      var _fullName = layerFullPath + ' / ' + layerName; // Start by filtering nested record names
+      var _fullName = layerFullPath + ' // ' + layerName; // Conditions
 
 
-      if (recordName.match(/\//) && layerFullPath.match(recordNames[0]) && _fullName.match(reg)) {
-        injectValue(record, layer, lang); // Then check non-nested records
-      } else if (recordName === layerName && !layerFullPath.match(/\//)) {
+      var nestedRecordMatchFullName = recordName.match(/\//) && layerFullPath.match(recordNames[0]) && _fullName.match(reg);
+
+      var notNestedLayerMatchRecord = recordName === layerName && !layerFullPath.match(/\//);
+      var notNestedRecordMatchLayer = layerName === recordName && !recordName.match(/\//);
+
+      if (nestedRecordMatchFullName || notNestedLayerMatchRecord || notNestedRecordMatchLayer) {
         injectValue(record, layer, lang);
       }
     }
@@ -17066,7 +17071,7 @@ function getOverrideFullName(symbolName, override) {
 
     overrideNameHierarchy.push(overrideName);
   });
-  return overrideNameHierarchy.join(' / ');
+  return overrideNameHierarchy.join(' // ');
 }
 /**
  * Get the name of layer from a library symbol
@@ -17147,17 +17152,17 @@ function getForeignGroupedLayerNameWithID(layerID, groupedLayers) {
 
 function applyMarkdownStyles(astData, layer) {
   astData.forEach(function (paragraph) {
+    var rangeDelay = 0;
+
     if (paragraph.children) {
-      var rangeDelay = 0;
       paragraph.children.forEach(function (text) {
         // Convert markdown + returns rangeDelay for update
         rangeDelay = convertMarkdownToSketch(text, layer, rangeDelay);
       });
     } else {
-      var _rangeDelay = 0;
       var text = paragraph; // Convert markdown + returns rangeDelay for update
 
-      _rangeDelay = convertMarkdownToSketch(text, layer, _rangeDelay);
+      rangeDelay = convertMarkdownToSketch(text, layer, rangeDelay);
     }
   });
 }
@@ -17207,14 +17212,14 @@ function convertMarkdownToSketch(text, layerObject, rangeDelay) {
       rangeDelay += 2;
       break;
 
-    case 'LinkReference':
+    case 'Link':
+      rangeStart = text.children[0].range[0] - 1;
+      rangeEnd = text.children[0].range[1] - text.children[0].range[0];
       rangeStart -= rangeDelay;
-      rangeEnd -= 5;
       range = NSMakeRange(rangeStart, rangeEnd);
-      var color = NSColor.colorWithHex(underlineColor);
-      layerObject.addAttribute_value_forRange(NSForegroundColorAttributeName, color, range);
+      var linkColor = NSColor.colorWithHex(underlineColor);
+      layerObject.addAttribute_value_forRange(NSForegroundColorAttributeName, linkColor, range);
       layerObject.addAttribute_value_forRange(NSUnderlineStyleAttributeName, 1, range);
-      rangeDelay += 5;
       break;
 
     case 'Str':

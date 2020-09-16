@@ -224,9 +224,12 @@ function syncArtboard(artboard, options, progress, progressIncrement) {
 
 			return fetch(apiEndpoint)
 				.then((res) => res.json())
-				.then((data) => {
-					return syncLayer(artboard, { records: [...commonData.records, ...data.records] }, options, []);
-				});
+				.then((data) => syncLayer(
+					artboard,
+					{ records: [...commonData.records, ...data.records] },
+					options,
+					[]
+				));
 		})
 		.then(() => {
 			log('Artboard synced');
@@ -243,6 +246,7 @@ function syncArtboard(artboard, options, progress, progressIncrement) {
 				// Something happened in setting up the request that triggered an Error
 				console.log('Error', error.message);
 				displayError('There\'s an error in the selected options.\n\n' + error.message);
+				return;
 			}
 			console.log(error.config);
 		});
@@ -284,7 +288,7 @@ function syncLayer(parentLayers, data, options, layersHierarchy) {
 							override.affectedLayer.type === 'Text'
 						) {
 							// We need to get the full and clean name of the override
-							const layerFullPath = layersHierarchy.join(' / ');
+							const layerFullPath = layersHierarchy.join(' // '); // 2 slashes so adjacent nested words can be easily targeted by regex
 							const overrideFullName = getOverrideFullName(symbolName, override);
 							const layerName = removeEmojis(override.affectedLayer.name);
 
@@ -296,7 +300,7 @@ function syncLayer(parentLayers, data, options, layersHierarchy) {
 
 				case 'Text':
 					const layerName = removeEmojis(layer.name);
-					const layerFullPath = layersHierarchy.join(' / ');
+					const layerFullPath = layersHierarchy.join(' // ');
 					updateLayerValue(data, layer, layerName, options, layerFullPath);
 					break;
 
@@ -331,12 +335,14 @@ function updateLayerValue(data, layer, layerName, options, layerFullPath, symbol
 		const recordName = record.fields.Name;
 		const recordNames = recordName.split('/').map(name => name.trim());
 
-		const reg = new RegExp(recordNames.join('.*'), 'i');
+		// const reg = new RegExp(recordNames.join('.*'), 'i');
+		const reg = new RegExp(recordNames.join('\\s\/.*\/\\s'), 'i');
 
 		// Check symbol with nested overrides. Record names must use a / (forward slash) for this.
-		// Template: "Symbol Name / Override Name"
+		// Template: "Symbol Name / Override Nested Name"
 		if (symbolName) {
-			const fullName = layerFullPath + ' / ' + symbolName;
+			// console.log('reg', reg);
+			const fullName = layerFullPath + ' // ' + symbolName;
 
 			if (fullName.match(reg)) {
 				injectValue(record, layer, lang);
@@ -345,7 +351,7 @@ function updateLayerValue(data, layer, layerName, options, layerFullPath, symbol
 
 		// Check nested and non-nested layers
 		} else {
-			const fullName = layerFullPath + ' / ' + layerName;
+			const fullName = layerFullPath + ' // ' + layerName;
 
 			// Conditions
 			const nestedRecordMatchFullName = recordName.match(/\//) &&
@@ -440,7 +446,7 @@ function getOverrideFullName(symbolName, override) {
 
 	});
 
-	return overrideNameHierarchy.join(' / ');
+	return overrideNameHierarchy.join(' // ');
 }
 
 

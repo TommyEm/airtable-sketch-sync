@@ -570,7 +570,6 @@ function convertMarkdownToSketch(text, layerObject, rangeDelay) {
 			rangeStart -= rangeDelay;
 			rangeEnd -= 4;
 			range = NSMakeRange(rangeStart, rangeEnd);
-
 			layerObject.addAttribute_value_forRange(NSStrikethroughStyleAttributeName, 1, range);
 			rangeDelay += 4;
 			break;
@@ -579,14 +578,14 @@ function convertMarkdownToSketch(text, layerObject, rangeDelay) {
 			rangeDelay += 2;
 			break;
 
-		case 'LinkReference':
+		case 'Link':
+			rangeStart = text.children[0].range[0] - 1;
+			rangeEnd = text.children[0].range[1] - text.children[0].range[0];
 			rangeStart -= rangeDelay;
-			rangeEnd -= 5;
 			range = NSMakeRange(rangeStart, rangeEnd);
-			const color = NSColor.colorWithHex(underlineColor);
-			layerObject.addAttribute_value_forRange(NSForegroundColorAttributeName, color, range);
+			const linkColor = NSColor.colorWithHex(underlineColor);
+			layerObject.addAttribute_value_forRange(NSForegroundColorAttributeName, linkColor, range);
 			layerObject.addAttribute_value_forRange(NSUnderlineStyleAttributeName, 1, range);
-			rangeDelay += 5;
 			break;
 
 		case 'Str':

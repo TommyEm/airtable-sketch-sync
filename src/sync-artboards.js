@@ -329,10 +329,7 @@ function updateLayerValue(data, layer, layerName, options, layerFullPath, symbol
 
 	data.records.reverse().map(record => {
 		const recordName = record.fields.Name;
-		const names = recordName.split('/');
-
-		let recordNames = [];
-		recordNames = names.map(name => name.trim());
+		const recordNames = recordName.split('/').map(name => name.trim());
 
 		const reg = new RegExp(recordNames.join('.*'), 'i');
 
@@ -350,16 +347,18 @@ function updateLayerValue(data, layer, layerName, options, layerFullPath, symbol
 		} else {
 			const fullName = layerFullPath + ' / ' + layerName;
 
-			// Start by filtering nested record names
-			if (
-				recordName.match(/\//) &&
+			// Conditions
+			const nestedRecordMatchFullName = recordName.match(/\//) &&
 				layerFullPath.match(recordNames[0]) &&
-				fullName.match(reg)
-			) {
-				injectValue(record, layer, lang);
+				fullName.match(reg);
+			const notNestedLayerMatchRecord = recordName === layerName && !layerFullPath.match(/\//);
+			const notNestedRecordMatchLayer = layerName === recordName && !recordName.match(/\//);
 
-			// Then check non-nested records
-			} else if (recordName === layerName && !layerFullPath.match(/\//)) {
+			if (
+				nestedRecordMatchFullName
+				|| notNestedLayerMatchRecord
+				|| notNestedRecordMatchLayer
+			) {
 				injectValue(record, layer, lang);
 			}
 		}
@@ -517,16 +516,15 @@ function getForeignGroupedLayerNameWithID(layerID, groupedLayers) {
  */
 function applyMarkdownStyles(astData, layer) {
 	astData.forEach(paragraph => {
-		if (paragraph.children) {
-			let rangeDelay = 0;
+		let rangeDelay = 0;
 
+		if (paragraph.children) {
 			paragraph.children.forEach(text => {
 				// Convert markdown + returns rangeDelay for update
 				rangeDelay = convertMarkdownToSketch(text, layer, rangeDelay);
 			});
 
 		} else {
-			let rangeDelay = 0;
 			const text = paragraph;
 
 			// Convert markdown + returns rangeDelay for update

@@ -16859,7 +16859,7 @@ function resetArtboard(parentLayers) {
  */
 
 
-function syncArtboard(artboard, options, progress, progressIncrement) {
+function syncArtboard(artboard, options) {
   var table = getCleanArtboardName(artboard.name);
   var base = bases[options.base];
   var commonDataApiEndpoint = getApiEndpoint(base, 'Global Template', options.maxRecords, options.view, pluginSettings.APIKey);
@@ -16983,7 +16983,6 @@ function updateLayerValue(data, layer, layerName, options, layerFullPath, symbol
     // Template: "Symbol Name / Override Nested Name"
 
     if (symbolName) {
-      // console.log('reg', reg);
       var fullName = layerFullPath + ' // ' + symbolName;
 
       if (fullName.match(reg)) {
@@ -16994,12 +16993,11 @@ function updateLayerValue(data, layer, layerName, options, layerFullPath, symbol
       var _fullName = layerFullPath + ' // ' + layerName; // Conditions
 
 
-      var nestedRecordMatchFullName = recordName.match(/\//) && layerFullPath.match(recordNames[0]) && _fullName.match(reg);
+      var nestedRecordMatchFullName = recordName.match(/\//) && _fullName.match(reg);
 
-      var notNestedLayerMatchRecord = recordName === layerName && !layerFullPath.match(/\//);
-      var notNestedRecordMatchLayer = layerName === recordName && !recordName.match(/\//);
+      var notNestedLayerMatchRecord = !layerFullPath.match(/\//) && recordName === layerName;
 
-      if (nestedRecordMatchFullName || notNestedLayerMatchRecord || notNestedRecordMatchLayer) {
+      if (nestedRecordMatchFullName || notNestedLayerMatchRecord) {
         injectValue(record, layer, lang);
       }
     }

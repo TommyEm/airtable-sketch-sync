@@ -196,7 +196,7 @@ function resetArtboard(parentLayers) {
  * @param {object} progress
  * @param {number} progressIncrement
  */
-function syncArtboard(artboard, options, progress, progressIncrement) {
+function syncArtboard(artboard, options) {
 	const table = getCleanArtboardName(artboard.name);
 	const base = bases[options.base];
 
@@ -341,7 +341,6 @@ function updateLayerValue(data, layer, layerName, options, layerFullPath, symbol
 		// Check symbol with nested overrides. Record names must use a / (forward slash) for this.
 		// Template: "Symbol Name / Override Nested Name"
 		if (symbolName) {
-			// console.log('reg', reg);
 			const fullName = layerFullPath + ' // ' + symbolName;
 
 			if (fullName.match(reg)) {
@@ -354,16 +353,14 @@ function updateLayerValue(data, layer, layerName, options, layerFullPath, symbol
 			const fullName = layerFullPath + ' // ' + layerName;
 
 			// Conditions
-			const nestedRecordMatchFullName = recordName.match(/\//) &&
-				layerFullPath.match(recordNames[0]) &&
-				fullName.match(reg);
-			const notNestedLayerMatchRecord = recordName === layerName && !layerFullPath.match(/\//);
-			const notNestedRecordMatchLayer = layerName === recordName && !recordName.match(/\//);
+			const nestedRecordMatchFullName = recordName.match(/\//)
+				&& fullName.match(reg);
+			const notNestedLayerMatchRecord = !layerFullPath.match(/\//)
+				&& recordName === layerName;
 
 			if (
 				nestedRecordMatchFullName
 				|| notNestedLayerMatchRecord
-				|| notNestedRecordMatchLayer
 			) {
 				injectValue(record, layer, lang);
 			}

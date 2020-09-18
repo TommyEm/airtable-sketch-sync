@@ -6,6 +6,11 @@ const {
     createField,
     createSelect,
 } = require('./ui');
+const {
+	getDefaultOptions,
+	baseNames,
+	langs,
+} = require('../defaults');
 
 const views = ['Grid view'];
 
@@ -16,6 +21,7 @@ const fieldWidth = 150;
 const fieldHeight = 28;
 const fieldSpacing = 20;
 
+const defaultOptions = getDefaultOptions();
 
 
 /**
@@ -23,7 +29,7 @@ const fieldSpacing = 20;
  * @param {object} defaultOptions
  * @param {array} baseNames
  */
-export function getUserOptions(defaultOptions, baseNames, langs) {
+export function getUserOptions() {
 	const alert = NSAlert.alloc().init(),
 		alertIconPath = context.plugin.urlForResourceNamed('icon.png').path(),
 		alertIcon = NSImage.alloc().initByReferencingFile(alertIconPath),
@@ -31,7 +37,7 @@ export function getUserOptions(defaultOptions, baseNames, langs) {
 
 	alert.setIcon(alertIcon);
 	alert.setMessageText('Airtable');
-	alert.setInformativeText('lorem');
+	// alert.setInformativeText('lorem');
 	// Buttons
 	alert.addButtonWithTitle('OK');
 	alert.addButtonWithTitle('Cancel');
@@ -39,7 +45,7 @@ export function getUserOptions(defaultOptions, baseNames, langs) {
 	alertContent.setFlipped(true);
 
 
-	let offsetY = 0;
+	let offsetY = 24;
 
 
 	// Select base (Project)
@@ -189,6 +195,20 @@ export function setPlugin(defaultSettings) {
 		NSMakeRect(labelWidth, offsetY, fieldWidth, fieldHeight));
 	alertContent.addSubview(APIKeyField);
 
+	offsetY = CGRectGetMaxY(alertContent.subviews().lastObject().frame()) + fieldSpacing;
+
+
+	// Bases
+	const basesLabel = createBoldLabel(
+		'Bases',
+		12,
+		NSMakeRect(0, offsetY, fieldWidth, labelHeight));
+	alertContent.addSubview(basesLabel);
+
+	const basesField = createField(
+		defaultSettings.bases,
+		NSMakeRect(labelWidth, offsetY, fieldWidth, 300));
+	alertContent.addSubview(basesField);
 
 
 	alertContent.frame = NSMakeRect(
@@ -202,10 +222,12 @@ export function setPlugin(defaultSettings) {
 
 	// Display alert
 	var responseCode = alert.runModal();
+
 	if (responseCode == NSAlertFirstButtonReturn) {
 		if (responseCode === 1000) {
 			const pluginSettings = {
 				APIKey: APIKeyField.stringValue(),
+				bases: basesField.stringValue(),
 			};
 
 			Settings.setSettingForKey('sketchAirtableSyncSettings', pluginSettings);
@@ -227,8 +249,7 @@ export function setPlugin(defaultSettings) {
 export function displayError(message) {
 	const alert = NSAlert.alloc().init(),
 		alertIconPath = context.plugin.urlForResourceNamed('icon.png').path(),
-		alertIcon = NSImage.alloc().initByReferencingFile(alertIconPath),
-		alertContent = NSView.alloc().init();
+		alertIcon = NSImage.alloc().initByReferencingFile(alertIconPath);
 
 	alert.setIcon(alertIcon);
 	alert.setMessageText('Error');

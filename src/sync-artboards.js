@@ -1,20 +1,14 @@
 const sketch = require('sketch');
 const document = require('sketch/dom').getSelectedDocument();
-const UI = require('sketch/ui');
 const { SymbolMaster } = require('sketch/dom');
 const Bluebird = require('bluebird');
 const { pluginSettings } = require('./settings');
-const { bases } = require('./secret');
 const {
 	getUserOptions,
 	displayError,
 	progress,
 } = require('./lib/alert');
-const {
-	getDefaultOptions,
-	baseNames,
-	langs,
-} = require('./defaults');
+const { getDefaultOptions } = require('./defaults');
 const {
 	getApiEndpoint,
 	getCleanArtboardName,
@@ -34,7 +28,7 @@ export function syncAllArtboards(context) {
 	log('Sync all artboards on page');
 
 	// Get user options from modal
-	const userOptions = getUserOptions(defaultOptions, baseNames, langs);
+	const userOptions = getUserOptions();
 
 
 	if (userOptions) {
@@ -79,7 +73,7 @@ export function syncSelectedArtboards(context) {
 	} else {
 
 		// Get user options from modal
-		const userOptions = getUserOptions(defaultOptions, baseNames, langs);
+		const userOptions = getUserOptions();
 
 		if (userOptions) {
 			underlineColor = userOptions.underlineColor;
@@ -108,11 +102,11 @@ export function syncSelectedArtboards(context) {
 					}
 				},
 				{ concurrency: 1 }
-			)
-				.then(() => {
-					console.log('Finished');
-					progressModal.close();
-				});
+
+			).then(() => {
+				console.log('Finished');
+				progressModal.close();
+			});
 
 		}
 
@@ -198,6 +192,7 @@ function resetArtboard(parentLayers) {
  */
 function syncArtboard(artboard, options) {
 	const table = getCleanArtboardName(artboard.name);
+	const bases = JSON.parse(pluginSettings.bases);
 	const base = bases[options.base];
 
 	const commonDataApiEndpoint = getApiEndpoint(
@@ -246,7 +241,6 @@ function syncArtboard(artboard, options) {
 				// Something happened in setting up the request that triggered an Error
 				console.log('Error', error.message);
 				displayError('There\'s an error in the selected options.\n\n' + error.message);
-				return;
 			}
 			console.log(error.config);
 		});

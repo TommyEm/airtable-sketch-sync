@@ -1,13 +1,18 @@
 const { Settings } = require('sketch');
-const { bases } = require('./secret');
 
-export const baseNames = Object.keys(bases).map(base => base);
+
 export const langs = [
 	'en_US',
 	'en_UK',
 	'fr_FR',
 ];
 export const views = ['Grid view'];
+
+
+const defaultBases = {
+	"baseName1": "Base Key",
+	"baseName2": "Base Key",
+};
 
 
 export function getDefaultOptions() {
@@ -22,7 +27,7 @@ export function getDefaultOptions() {
 		defaultOptions.underlineColor = pluginOptions.underlineColor;
 
 	} else {
-		defaultOptions.base = baseNames[0];
+		defaultOptions.base = defaultBases[0];
 		defaultOptions.maxRecords = 100;
 		defaultOptions.view = views[0];
 		defaultOptions.lang = langs[0];
@@ -31,3 +36,8 @@ export function getDefaultOptions() {
 
 	return defaultOptions;
 }
+
+
+const { bases } = Settings.settingForKey('sketchAirtableSyncSettings');
+
+export const baseNames = Object.keys(JSON.parse(bases)).map(base => base);

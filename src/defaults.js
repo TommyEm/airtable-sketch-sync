@@ -11,7 +11,7 @@ export const views = ['Grid view'];
 
 const defaultBases = {
 	"baseName1": "Base Key",
-	"baseName2": "Base Key",
+	"baseName2": "Base Key"
 };
 
 

@@ -1,93 +1,50 @@
 # Sketch Airtable Sync
 
-_This plugin was created using `skpm`. For a detailed explanation on how things work, checkout the [skpm Readme](https://github.com/skpm/skpm/blob/master/README.md)._
+This plugin populates Sketch artboards with content from an Airtable base. It supports rich text for simple layers (not content passed through symbol overrides).
+
+## Installation
+
+- Download the latest release.
+- Double-click the `.sketchplugin` file to install.
+
+## Airtable
+
+To work properly, content should be structured as follows:
+- One base per project or page.
+- One table per artboard.
+- The first field (column) must be named `Name`, each entry being the name of a layer.
+- Layer names in Sketch can use emojis even if they're not in Airtable.
+- To target specific layers, your can use parent layer names with `/` as separator (examples: `Header / Title`, or `Header / Navigation / Item 1`).
+- The second field is meant for the content values. Subsequent fields can be used for translation in different languages (internationalization).
 
 ## Usage
 
-Install the dependencies
+### Settings
 
-```bash
-npm install
+Go to `Plugins > Sketch Airtable Sync > Settings`.
+Insert your Airtable API Key.
+Insert your bases keys in JSON format.
+
 ```
-
-Once the installation is done, you can run some commands inside the project folder:
-
-```bash
-npm run build
-```
-
-To watch for changes:
-
-```bash
-npm run watch
-```
-
-Additionally, if you wish to run the plugin every time it is built:
-
-```bash
-npm run start
-```
-
-## Custom Configuration
-
-### Babel
-
-To customize Babel, you have two options:
-
-* You may create a [`.babelrc`](https://babeljs.io/docs/usage/babelrc) file in your project's root directory. Any settings you define here will overwrite matching config-keys within skpm preset. For example, if you pass a "presets" object, it will replace & reset all Babel presets that skpm defaults to.
-
-* If you'd like to modify or add to the existing Babel config, you must use a `webpack.skpm.config.js` file. Visit the [Webpack](#webpack) section for more info.
-
-### Webpack
-
-To customize webpack create `webpack.skpm.config.js` file which exports function that will change webpack's config.
-
-```js
-/**
- * Function that mutates original webpack config.
- * Supports asynchronous changes when promise is returned.
- *
- * @param {object} config - original webpack config.
- * @param {boolean} isPluginCommand - whether the config is for a plugin command or a resource
- **/
-module.exports = function(config, isPluginCommand) {
-  /** you can change config here **/
+{
+	"baseName1": "Base Key",
+	"baseName2": "Base Key"
 }
 ```
 
-## Debugging
+### Sync a selection of artboards
 
-To view the output of your `console.log`, you have a few different options:
+Select one or more artboards.
+Go to `Plugins > Sketch Airtable Sync > Sync Selected Artboards` (shortcut `Shift Command D`).
 
-* Use the [`sketch-dev-tools`](https://github.com/skpm/sketch-dev-tools)
-* Open `Console.app` and look for the sketch logs
-* Look at the `~/Library/Logs/com.bohemiancoding.sketch3/Plugin Output.log` file
+### Sync all artboards on the page
 
-Skpm provides a convenient way to do the latter:
+Go to `Plugins > Sketch Airtable Sync > Sync All Artboards`.
 
-```bash
-skpm log
-```
+### Sync options
 
-The `-f` option causes `skpm log` to not stop when the end of logs is reached, but rather to wait for additional data to be appended to the input
-
-## Publishing your plugin
-
-```bash
-skpm publish <bump>
-```
-
-(where `bump` can be `patch`, `minor` or `major`)
-
-`skpm publish` will create a new release on your GitHub repository and create an appcast file in order for Sketch users to be notified of the update.
-
-You will need to specify a `repository` in the `package.json`:
-
-```diff
-...
-+ "repository" : {
-+   "type": "git",
-+   "url": "git+https://github.com/ORG/NAME.git"
-+  }
-...
-```
+- Base: the base corresponding to the current project.
+- Language: the field (column) corresponding to the language to be synced with.
+- View: currently not used.
+- Max records: if you want to limit the number of records to be synced per table. Specify a high number by default if you want to be sure to sync everything all the time.
+- Underline color: when using inserting links in Airtable, you can specify here their color.

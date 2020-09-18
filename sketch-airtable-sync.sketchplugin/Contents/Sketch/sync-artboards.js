@@ -16310,13 +16310,14 @@ var baseNames = Object.keys(JSON.parse(bases)).map(function (base) {
 /*!**************************!*\
   !*** ./src/lib/alert.js ***!
   \**************************/
-/*! exports provided: getUserOptions, setPlugin, displayError, progress */
+/*! exports provided: getUserOptions, setPlugin, getSubstituteText, displayError, progress */
 /***/ (function(module, __webpack_exports__, __webpack_require__) {
 
 "use strict";
 __webpack_require__.r(__webpack_exports__);
 /* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "getUserOptions", function() { return getUserOptions; });
 /* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "setPlugin", function() { return setPlugin; });
+/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "getSubstituteText", function() { return getSubstituteText; });
 /* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "displayError", function() { return displayError; });
 /* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "progress", function() { return progress; });
 var sketch = __webpack_require__(/*! sketch */ "sketch");
@@ -16355,8 +16356,8 @@ function getUserOptions() {
       alertIcon = NSImage.alloc().initByReferencingFile(alertIconPath),
       alertContent = NSView.alloc().init();
   alert.setIcon(alertIcon);
-  alert.setMessageText('Airtable'); // alert.setInformativeText('lorem');
-  // Buttons
+  alert.setMessageText('Sketch Airtable Sync');
+  alert.setInformativeText('Sync artboards'); // Buttons
 
   alert.addButtonWithTitle('OK');
   alert.addButtonWithTitle('Cancel');
@@ -16429,7 +16430,7 @@ function setPlugin(defaultSettings) {
   alert.addButtonWithTitle('OK');
   alert.addButtonWithTitle('Cancel');
   alertContent.setFlipped(true);
-  var offsetY = 0; // API Key
+  var offsetY = 12; // API Key
 
   var APIKeyLabel = createBoldLabel('API Key', 12, NSMakeRect(0, offsetY, fieldWidth, labelHeight));
   alertContent.addSubview(APIKeyLabel);
@@ -16454,6 +16455,41 @@ function setPlugin(defaultSettings) {
       };
       Settings.setSettingForKey('sketchAirtableSyncSettings', pluginSettings);
       return pluginSettings;
+    } else {
+      return false;
+    }
+  }
+}
+/**
+ * Set substitute text for layer resets
+ */
+
+function getSubstituteText() {
+  var alert = NSAlert.alloc().init(),
+      alertIconPath = context.plugin.urlForResourceNamed('icon.png').path(),
+      alertIcon = NSImage.alloc().initByReferencingFile(alertIconPath),
+      alertContent = NSView.alloc().init();
+  alert.setIcon(alertIcon);
+  alert.setMessageText('Sketch Airtable Sync');
+  alert.setInformativeText('Reset layers content'); // Buttons
+
+  alert.addButtonWithTitle('OK');
+  alert.addButtonWithTitle('Cancel');
+  alertContent.setFlipped(true);
+  var offsetY = 12;
+  var SubstituteTextLabel = createBoldLabel('Substitute Text', 12, NSMakeRect(0, offsetY, fieldWidth, labelHeight));
+  alertContent.addSubview(SubstituteTextLabel);
+  var SubstituteTextField = createField('Text', NSMakeRect(labelWidth, offsetY, fieldWidth, fieldHeight));
+  alertContent.addSubview(SubstituteTextField);
+  offsetY = CGRectGetMaxY(alertContent.subviews().lastObject().frame()) + fieldSpacing;
+  alertContent.frame = NSMakeRect(0, 20, 300, CGRectGetMaxY(alertContent.subviews().lastObject().frame()));
+  alert.accessoryView = alertContent; // Display alert
+
+  var responseCode = alert.runModal();
+
+  if (responseCode == NSAlertFirstButtonReturn) {
+    if (responseCode === 1000) {
+      return SubstituteTextField.stringValue();
     } else {
       return false;
     }
@@ -16704,6 +16740,7 @@ var _require2 = __webpack_require__(/*! ./settings */ "./src/settings.js"),
 
 var _require3 = __webpack_require__(/*! ./lib/alert */ "./src/lib/alert.js"),
     getUserOptions = _require3.getUserOptions,
+    getSubstituteText = _require3.getSubstituteText,
     displayError = _require3.displayError,
     progress = _require3.progress;
 
@@ -16723,8 +16760,7 @@ var foreignSymbolMasters = getForeignSymbolMasters(document);
 var defaultOptions = getDefaultOptions();
 var underlineColor = defaultOptions.underlineColor;
 function syncAllArtboards(context) {
-  log('Sync all artboards on page'); // Get user options from modal
-
+  // Get user options from modal
   var userOptions = getUserOptions();
 
   if (userOptions) {
@@ -16749,8 +16785,7 @@ function syncAllArtboards(context) {
   }
 }
 function syncSelectedArtboards(context) {
-  log('Sync Selected'); // No artboard selected
-
+  // No artboard selected
   if (document.selectedLayers.isEmpty) {
     displayError('No artboards are selected. Please select one or more.'); // Artboards selected OK
   } else {
@@ -16786,7 +16821,7 @@ function syncSelectedArtboards(context) {
   }
 }
 function resetSelectedArtboards(context) {
-  log('Clean up'); // No artboard selected
+  var substituteText = getSubstituteText(); // No artboard selected
 
   if (document.selectedLayers.isEmpty) {
     displayError('No artboards are selected. Please select one or more.'); // Artboards selected OK
@@ -16794,7 +16829,7 @@ function resetSelectedArtboards(context) {
     document.selectedLayers.forEach(function (layer) {
       if (layer.type === 'Artboard') {
         log('Artboard');
-        resetArtboard(layer);
+        resetArtboard(layer, substituteText);
       } else {
         log(layer.name);
         displayError('No artboards are selected. Please select one or more.');
@@ -16805,9 +16840,10 @@ function resetSelectedArtboards(context) {
 /**
  * Insert a placeholder value into each nested text layer and override
  * @param {object} parentLayers
+ * @param {string} substituteText
  */
 
-function resetArtboard(parentLayers) {
+function resetArtboard(parentLayers, substituteText) {
   parentLayers.layers.forEach(function (layer) {
     if (layer.hidden === false) {
       // We don't sync hidden layers
@@ -16815,20 +16851,20 @@ function resetArtboard(parentLayers) {
         case 'SymbolInstance':
           layer.overrides.forEach(function (override) {
             if (override.affectedLayer.type === 'Text' && override.value != '' && override.value != ' ') {
-              override.value = 'Text';
+              override.value = substituteText;
             }
           });
           break;
 
         case 'Text':
           if (layer.text != '' && layer.text != ' ') {
-            layer.text = 'Text';
+            layer.text = substituteText;
           }
 
           break;
 
         case 'Group':
-          resetArtboard(layer);
+          resetArtboard(layer, substituteText);
           break;
 
         default:
@@ -16999,8 +17035,7 @@ function updateLayerValue(data, layer, layerName, options, layerFullPath, symbol
 function injectValue(record, layer, lang) {
   if (!layer.hidden) {
     var currentCellData = record.fields[lang];
-    var data = currentCellData ? currentCellData : ' '; // const data = currentCellData ? currentCellData.replace(/[^A-Za-z 0-9 \.,\?""!@#\$%\^&\*\(\)-_=\+;:<>\/\\\|\}\{\[\]`~]*/g, '') : ' '; // If needed, this strips the string from invisible characters
-
+    var data = currentCellData ? currentCellData : ' ';
     var ast = parse(data);
     var astData = ast.children;
     var strippedText = stripMarkdownFromText(astData, []).join('');

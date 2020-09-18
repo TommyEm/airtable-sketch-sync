@@ -36,8 +36,8 @@ export function getUserOptions() {
 		alertContent = NSView.alloc().init();
 
 	alert.setIcon(alertIcon);
-	alert.setMessageText('Airtable');
-	// alert.setInformativeText('lorem');
+	alert.setMessageText('Sketch Airtable Sync');
+	alert.setInformativeText('Sync artboards');
 	// Buttons
 	alert.addButtonWithTitle('OK');
 	alert.addButtonWithTitle('Cancel');
@@ -179,8 +179,7 @@ export function setPlugin(defaultSettings) {
 
 	alertContent.setFlipped(true);
 
-
-	let offsetY = 0;
+	let offsetY = 12;
 
 
 	// API Key
@@ -233,6 +232,66 @@ export function setPlugin(defaultSettings) {
 			Settings.setSettingForKey('sketchAirtableSyncSettings', pluginSettings);
 
 			return pluginSettings;
+
+		} else {
+			return false;
+		}
+	}
+}
+
+
+
+/**
+ * Set substitute text for layer resets
+ */
+export function getSubstituteText() {
+	const alert = NSAlert.alloc().init(),
+		alertIconPath = context.plugin.urlForResourceNamed('icon.png').path(),
+		alertIcon = NSImage.alloc().initByReferencingFile(alertIconPath),
+		alertContent = NSView.alloc().init();
+
+	alert.setIcon(alertIcon);
+	alert.setMessageText('Sketch Airtable Sync');
+	alert.setInformativeText('Reset layers content');
+	// Buttons
+	alert.addButtonWithTitle('OK');
+	alert.addButtonWithTitle('Cancel');
+
+	alertContent.setFlipped(true);
+
+
+	let offsetY = 12;
+
+
+	const SubstituteTextLabel = createBoldLabel(
+		'Substitute Text',
+		12,
+		NSMakeRect(0, offsetY, fieldWidth, labelHeight));
+	alertContent.addSubview(SubstituteTextLabel);
+
+	const SubstituteTextField = createField(
+		'Text',
+		NSMakeRect(labelWidth, offsetY, fieldWidth, fieldHeight));
+	alertContent.addSubview(SubstituteTextField);
+
+	offsetY = CGRectGetMaxY(alertContent.subviews().lastObject().frame()) + fieldSpacing;
+
+
+	alertContent.frame = NSMakeRect(
+		0,
+		20,
+		300,
+		CGRectGetMaxY(alertContent.subviews().lastObject().frame())
+	);
+	alert.accessoryView = alertContent;
+
+
+	// Display alert
+	var responseCode = alert.runModal();
+
+	if (responseCode == NSAlertFirstButtonReturn) {
+		if (responseCode === 1000) {
+			return SubstituteTextField.stringValue();
 
 		} else {
 			return false;

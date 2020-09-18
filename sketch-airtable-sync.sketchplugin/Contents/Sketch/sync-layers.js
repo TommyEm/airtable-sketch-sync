@@ -10810,13 +10810,14 @@ var baseNames = Object.keys(JSON.parse(bases)).map(function (base) {
 /*!**************************!*\
   !*** ./src/lib/alert.js ***!
   \**************************/
-/*! exports provided: getUserOptions, setPlugin, displayError, progress */
+/*! exports provided: getUserOptions, setPlugin, getSubstituteText, displayError, progress */
 /***/ (function(module, __webpack_exports__, __webpack_require__) {
 
 "use strict";
 __webpack_require__.r(__webpack_exports__);
 /* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "getUserOptions", function() { return getUserOptions; });
 /* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "setPlugin", function() { return setPlugin; });
+/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "getSubstituteText", function() { return getSubstituteText; });
 /* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "displayError", function() { return displayError; });
 /* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "progress", function() { return progress; });
 var sketch = __webpack_require__(/*! sketch */ "sketch");
@@ -10855,8 +10856,8 @@ function getUserOptions() {
       alertIcon = NSImage.alloc().initByReferencingFile(alertIconPath),
       alertContent = NSView.alloc().init();
   alert.setIcon(alertIcon);
-  alert.setMessageText('Airtable'); // alert.setInformativeText('lorem');
-  // Buttons
+  alert.setMessageText('Sketch Airtable Sync');
+  alert.setInformativeText('Sync artboards'); // Buttons
 
   alert.addButtonWithTitle('OK');
   alert.addButtonWithTitle('Cancel');
@@ -10929,7 +10930,7 @@ function setPlugin(defaultSettings) {
   alert.addButtonWithTitle('OK');
   alert.addButtonWithTitle('Cancel');
   alertContent.setFlipped(true);
-  var offsetY = 0; // API Key
+  var offsetY = 12; // API Key
 
   var APIKeyLabel = createBoldLabel('API Key', 12, NSMakeRect(0, offsetY, fieldWidth, labelHeight));
   alertContent.addSubview(APIKeyLabel);
@@ -10954,6 +10955,41 @@ function setPlugin(defaultSettings) {
       };
       Settings.setSettingForKey('sketchAirtableSyncSettings', pluginSettings);
       return pluginSettings;
+    } else {
+      return false;
+    }
+  }
+}
+/**
+ * Set substitute text for layer resets
+ */
+
+function getSubstituteText() {
+  var alert = NSAlert.alloc().init(),
+      alertIconPath = context.plugin.urlForResourceNamed('icon.png').path(),
+      alertIcon = NSImage.alloc().initByReferencingFile(alertIconPath),
+      alertContent = NSView.alloc().init();
+  alert.setIcon(alertIcon);
+  alert.setMessageText('Sketch Airtable Sync');
+  alert.setInformativeText('Reset layers content'); // Buttons
+
+  alert.addButtonWithTitle('OK');
+  alert.addButtonWithTitle('Cancel');
+  alertContent.setFlipped(true);
+  var offsetY = 12;
+  var SubstituteTextLabel = createBoldLabel('Substitute Text', 12, NSMakeRect(0, offsetY, fieldWidth, labelHeight));
+  alertContent.addSubview(SubstituteTextLabel);
+  var SubstituteTextField = createField('Text', NSMakeRect(labelWidth, offsetY, fieldWidth, fieldHeight));
+  alertContent.addSubview(SubstituteTextField);
+  offsetY = CGRectGetMaxY(alertContent.subviews().lastObject().frame()) + fieldSpacing;
+  alertContent.frame = NSMakeRect(0, 20, 300, CGRectGetMaxY(alertContent.subviews().lastObject().frame()));
+  alert.accessoryView = alertContent; // Display alert
+
+  var responseCode = alert.runModal();
+
+  if (responseCode == NSAlertFirstButtonReturn) {
+    if (responseCode === 1000) {
+      return SubstituteTextField.stringValue();
     } else {
       return false;
     }

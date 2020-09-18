@@ -5,6 +5,7 @@ const Bluebird = require('bluebird');
 const { pluginSettings } = require('./settings');
 const {
 	getUserOptions,
+	getSubstituteText,
 	displayError,
 	progress,
 } = require('./lib/alert');
@@ -25,7 +26,6 @@ let { underlineColor } = defaultOptions;
 
 
 export function syncAllArtboards(context) {
-	log('Sync all artboards on page');
 
 	// Get user options from modal
 	const userOptions = getUserOptions();
@@ -63,7 +63,6 @@ export function syncAllArtboards(context) {
 
 
 export function syncSelectedArtboards(context) {
-	log('Sync Selected');
 
 	// No artboard selected
 	if (document.selectedLayers.isEmpty) {
@@ -115,7 +114,8 @@ export function syncSelectedArtboards(context) {
 
 
 export function resetSelectedArtboards(context) {
-	log('Clean up');
+
+	const substituteText = getSubstituteText();
 
 	// No artboard selected
 	if (document.selectedLayers.isEmpty) {
@@ -128,7 +128,7 @@ export function resetSelectedArtboards(context) {
 
 			if (layer.type === 'Artboard') {
 				log('Artboard');
-				resetArtboard(layer);
+				resetArtboard(layer, substituteText);
 
 			} else {
 				log(layer.name);
@@ -145,8 +145,9 @@ export function resetSelectedArtboards(context) {
 /**
  * Insert a placeholder value into each nested text layer and override
  * @param {object} parentLayers
+ * @param {string} substituteText
  */
-function resetArtboard(parentLayers) {
+function resetArtboard(parentLayers, substituteText) {
 
 	parentLayers.layers.forEach(layer => {
 		if (layer.hidden === false) { // We don't sync hidden layers
@@ -159,19 +160,19 @@ function resetArtboard(parentLayers) {
 							override.value != '' &&
 							override.value != ' '
 						) {
-							override.value = 'Text';
+							override.value = substituteText;
 						}
 					});
 					break;
 
 				case 'Text':
 					if (layer.text != '' && layer.text != ' ') {
-						layer.text = 'Text';
+						layer.text = substituteText;
 					}
 					break;
 
 				case 'Group':
-					resetArtboard(layer);
+					resetArtboard(layer, substituteText);
 					break;
 
 				default:
@@ -375,7 +376,6 @@ function injectValue(record, layer, lang) {
 	if (!layer.hidden) {
 		const currentCellData = record.fields[lang];
 		const data = currentCellData ? currentCellData : ' ';
-		// const data = currentCellData ? currentCellData.replace(/[^A-Za-z 0-9 \.,\?""!@#\$%\^&\*\(\)-_=\+;:<>\/\\\|\}\{\[\]`~]*/g, '') : ' '; // If needed, this strips the string from invisible characters
 
 		const ast = parse(data);
 		const astData = ast.children;

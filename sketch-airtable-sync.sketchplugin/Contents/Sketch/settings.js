@@ -183,8 +183,6 @@ var fieldSpacing = 20;
 var defaultOptions = getDefaultOptions();
 /**
  * Create alert modal with options
- * @param {object} defaultOptions
- * @param {array} baseNames
  */
 
 function getUserOptions() {

@@ -26,8 +26,6 @@ const defaultOptions = getDefaultOptions();
 
 /**
  * Create alert modal with options
- * @param {object} defaultOptions
- * @param {array} baseNames
  */
 export function getUserOptions() {
 	const alert = NSAlert.alloc().init(),
@@ -43,7 +41,6 @@ export function getUserOptions() {
 	alert.addButtonWithTitle('Cancel');
 
 	alertContent.setFlipped(true);
-
 
 	let offsetY = 24;
 
@@ -133,7 +130,6 @@ export function getUserOptions() {
 		CGRectGetMaxY(alertContent.subviews().lastObject().frame()),
 	);
 	alert.accessoryView = alertContent;
-
 
 
 	// Display alert
@@ -258,7 +254,6 @@ export function getSubstituteText() {
 	alert.addButtonWithTitle('Cancel');
 
 	alertContent.setFlipped(true);
-
 
 	let offsetY = 12;
 

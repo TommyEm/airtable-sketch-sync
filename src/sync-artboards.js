@@ -260,7 +260,7 @@ function syncArtboard(artboard, options) {
  *         - value
  *         - affectedLayer
  *            - name
- * 			  - type
+ * 	          - type
  *       }
  * @param {object} parentLayers
  * @param {object} data

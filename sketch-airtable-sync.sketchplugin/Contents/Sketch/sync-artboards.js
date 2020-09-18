@@ -16346,8 +16346,6 @@ var fieldSpacing = 20;
 var defaultOptions = getDefaultOptions();
 /**
  * Create alert modal with options
- * @param {object} defaultOptions
- * @param {array} baseNames
  */
 
 function getUserOptions() {
@@ -16614,6 +16612,15 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "removeEmojis", function() { return removeEmojis; });
 /* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "stripMarkdownFromText", function() { return stripMarkdownFromText; });
 /* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "getCleanArtboardName", function() { return getCleanArtboardName; });
+/**
+ * Construct the API Endpoint
+ * @param {string} base
+ * @param {string} table
+ * @param {number} maxRecords
+ * @param {string} view
+ * @param {string} APIKey
+ * @returns {string}
+ */
 function getApiEndpoint(base, table, maxRecords, view, APIKey) {
   return encodeURI("https://api.airtable.com/v0/".concat(base, "/").concat(table, "?maxRecords=").concat(maxRecords, "&view=").concat(view, "&api_key=").concat(APIKey));
 }
@@ -16929,7 +16936,7 @@ function syncArtboard(artboard, options) {
  *         - value
  *         - affectedLayer
  *            - name
- * 			  - type
+ * 	          - type
  *       }
  * @param {object} parentLayers
  * @param {object} data

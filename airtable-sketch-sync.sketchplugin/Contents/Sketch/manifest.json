@@ -1,4 +1,6 @@
 {
+  "name": "Airtable-Sketch Sync",
+  "description": "Sync content from Airtable to Sketch.",
   "compatibleVersion": 3,
   "bundleVersion": 1,
   "icon": "icon.png",
@@ -16,7 +18,7 @@
     },
     {
       "name": "📝 Sync all artboards",
-      "identifier": "sketch-airtable-sync.sync-all-artboards-identifier",
+      "identifier": "airtable-sketch-sync.sync-all-artboards-identifier",
       "script": "sync-artboards.js",
       "handlers": {
         "run": "syncAllArtboards"
@@ -25,7 +27,7 @@
     },
     {
       "name": "📝 Sync selected artboards",
-      "identifier": "sketch-airtable-sync.sync-selected-artboards-identifier",
+      "identifier": "airtable-sketch-sync.sync-selected-artboards-identifier",
       "script": "sync-artboards.js",
       "shortcut": "cmd shift d",
       "handlers": {
@@ -35,7 +37,7 @@
     },
     {
       "name": "📝 Reset selected artboards",
-      "identifier": "sketch-airtable-sync.reset-selected-artboards-identifier",
+      "identifier": "airtable-sketch-sync.reset-selected-artboards-identifier",
       "script": "sync-artboards.js",
       "shortcut": "cmd shift c",
       "handlers": {
@@ -45,27 +47,24 @@
     },
     {
       "name": "⚙️ Settings",
-      "identifier": "sketch-airtable-sync.settings-identifier",
+      "identifier": "airtable-sketch-sync.settings-identifier",
       "script": "settings.js"
     }
   ],
   "menu": {
-    "title": "Sketch Airtable Sync",
+    "title": "Airtable-Sketch Sync",
     "items": [
-      "sketch-airtable-sync.settings-identifier",
+      "airtable-sketch-sync.settings-identifier",
       "-",
-      "sketch-airtable-sync.sync-all-artboards-identifier",
-      "sketch-airtable-sync.sync-selected-artboards-identifier",
+      "airtable-sketch-sync.sync-all-artboards-identifier",
+      "airtable-sketch-sync.sync-selected-artboards-identifier",
       "-",
-      "sketch-airtable-sync.reset-selected-artboards-identifier"
+      "airtable-sketch-sync.reset-selected-artboards-identifier"
     ]
   },
   "version": "1.0.0",
-  "description": "A DataSupplier plugin",
-  "name": "sketch-airtable-sync",
-  "identifier": "sketch-airtable-sync",
+  "identifier": "airtable-sketch-sync",
   "disableCocoaScriptPreprocessor": true,
   "appcast": "https://raw.githubusercontent.com//master/.appcast.xml",
-  "author": "Tommy Mabrier",
-  "authorEmail": "tommy.mabrier@kubity.com"
+  "author": "Tommy Em"
 }

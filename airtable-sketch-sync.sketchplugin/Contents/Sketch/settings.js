@@ -95,14 +95,15 @@ var exports =
 /*!*************************!*\
   !*** ./src/defaults.js ***!
   \*************************/
-/*! exports provided: langs, views, getDefaultOptions, baseNames */
+/*! exports provided: langs, views, getOptions, getSettings, baseNames */
 /***/ (function(module, __webpack_exports__, __webpack_require__) {
 
 "use strict";
 __webpack_require__.r(__webpack_exports__);
 /* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "langs", function() { return langs; });
 /* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "views", function() { return views; });
-/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "getDefaultOptions", function() { return getDefaultOptions; });
+/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "getOptions", function() { return getOptions; });
+/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "getSettings", function() { return getSettings; });
 /* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "baseNames", function() { return baseNames; });
 var _require = __webpack_require__(/*! sketch */ "sketch"),
     Settings = _require.Settings;
@@ -110,10 +111,10 @@ var _require = __webpack_require__(/*! sketch */ "sketch"),
 var langs = ['en_US', 'en_UK', 'fr_FR'];
 var views = ['Grid view'];
 var defaultBases = {
-  "baseName1": "Base Key",
-  "baseName2": "Base Key"
+  "baseName1": "Insert Base Key",
+  "baseName2": "Insert Base Key"
 };
-function getDefaultOptions() {
+function getOptions() {
   var defaultOptions = {};
   var pluginOptions = Settings.settingForKey('sketchAirtableSync');
 
@@ -124,6 +125,7 @@ function getDefaultOptions() {
     defaultOptions.lang = pluginOptions.lang;
     defaultOptions.underlineColor = pluginOptions.underlineColor;
   } else {
+    // Defaults
     defaultOptions.base = defaultBases[0];
     defaultOptions.maxRecords = 100;
     defaultOptions.view = views[0];
@@ -133,13 +135,40 @@ function getDefaultOptions() {
 
   return defaultOptions;
 }
+/**
+ * Get saved settings if they exist, otherwise returns default ones
+ * @returns {object}
+ */
 
-var _Settings$settingForK = Settings.settingForKey('sketchAirtableSyncSettings'),
-    bases = _Settings$settingForK.bases;
+function getSettings() {
+  var defaultSettings = {};
+  var pluginSettings = Settings.settingForKey('airtableSketchSyncSettings');
 
-var baseNames = Object.keys(JSON.parse(bases)).map(function (base) {
-  return base;
-});
+  if (pluginSettings) {
+    defaultSettings.APIKey = pluginSettings.APIKey;
+    defaultSettings.bases = pluginSettings.bases;
+  } else {
+    defaultSettings.APIKey = 'Insert APIKey';
+    defaultSettings.bases = JSON.stringify(defaultBases, null, 2);
+  }
+
+  return defaultSettings;
+}
+var storedSettings = Settings.settingForKey('airtableSketchSyncSettings');
+var names = [];
+
+if (storedSettings) {
+  var bases = storedSettings.bases;
+  names = Object.keys(JSON.parse(bases)).map(function (base) {
+    return base;
+  });
+} else {
+  names = Object.keys(defaultBases).map(function (base) {
+    return base;
+  });
+}
+
+var baseNames = names;
 
 /***/ }),
 
@@ -157,30 +186,30 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "getSubstituteText", function() { return getSubstituteText; });
 /* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "displayError", function() { return displayError; });
 /* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "progress", function() { return progress; });
-var sketch = __webpack_require__(/*! sketch */ "sketch");
+var _require = __webpack_require__(/*! sketch */ "sketch"),
+    Settings = _require.Settings;
 
 var document = __webpack_require__(/*! sketch/dom */ "sketch/dom").getSelectedDocument();
 
-var Settings = sketch.Settings;
+var _require2 = __webpack_require__(/*! ./ui */ "./src/lib/ui.js"),
+    createBoldLabel = _require2.createBoldLabel,
+    createField = _require2.createField,
+    createSelect = _require2.createSelect;
 
-var _require = __webpack_require__(/*! ./ui */ "./src/lib/ui.js"),
-    createBoldLabel = _require.createBoldLabel,
-    createField = _require.createField,
-    createSelect = _require.createSelect;
-
-var _require2 = __webpack_require__(/*! ../defaults */ "./src/defaults.js"),
-    getDefaultOptions = _require2.getDefaultOptions,
-    baseNames = _require2.baseNames,
-    langs = _require2.langs;
+var _require3 = __webpack_require__(/*! ../defaults */ "./src/defaults.js"),
+    getOptions = _require3.getOptions,
+    baseNames = _require3.baseNames,
+    langs = _require3.langs;
 
 var views = ['Grid view']; // UI Settings
 
 var labelWidth = 100;
 var labelHeight = 24;
 var fieldWidth = 150;
+var fieldWidthLarge = 400;
 var fieldHeight = 28;
 var fieldSpacing = 20;
-var defaultOptions = getDefaultOptions();
+var defaultOptions = getOptions();
 /**
  * Create alert modal with options
  */
@@ -250,10 +279,10 @@ function getUserOptions() {
 }
 /**
  * Plugin Settings (API Key)
- * @param {object} defaultSettings
+ * @param {object} settings
  */
 
-function setPlugin(defaultSettings) {
+function setPlugin(settings) {
   var alert = NSAlert.alloc().init(),
       alertIconPath = context.plugin.urlForResourceNamed('icon.png').path(),
       alertIcon = NSImage.alloc().initByReferencingFile(alertIconPath),
@@ -262,22 +291,22 @@ function setPlugin(defaultSettings) {
   alert.setMessageText('Sketch Airtable Sync');
   alert.setInformativeText('Settings'); // Buttons
 
-  alert.addButtonWithTitle('OK');
+  alert.addButtonWithTitle('Save');
   alert.addButtonWithTitle('Cancel');
   alertContent.setFlipped(true);
   var offsetY = 12; // API Key
 
   var APIKeyLabel = createBoldLabel('API Key', 12, NSMakeRect(0, offsetY, fieldWidth, labelHeight));
   alertContent.addSubview(APIKeyLabel);
-  var APIKeyField = createField(defaultSettings.APIKey, NSMakeRect(labelWidth, offsetY, fieldWidth, fieldHeight));
+  var APIKeyField = createField(settings.APIKey, NSMakeRect(labelWidth, offsetY, fieldWidthLarge, fieldHeight));
   alertContent.addSubview(APIKeyField);
   offsetY = CGRectGetMaxY(alertContent.subviews().lastObject().frame()) + fieldSpacing; // Bases
 
   var basesLabel = createBoldLabel('Bases', 12, NSMakeRect(0, offsetY, fieldWidth, labelHeight));
   alertContent.addSubview(basesLabel);
-  var basesField = createField(defaultSettings.bases, NSMakeRect(labelWidth, offsetY, fieldWidth, 300));
+  var basesField = createField(settings.bases, NSMakeRect(labelWidth, offsetY, fieldWidthLarge, 300));
   alertContent.addSubview(basesField);
-  alertContent.frame = NSMakeRect(0, 20, 300, CGRectGetMaxY(alertContent.subviews().lastObject().frame()));
+  alertContent.frame = NSMakeRect(0, 20, 500, CGRectGetMaxY(alertContent.subviews().lastObject().frame()));
   alert.accessoryView = alertContent; // Display alert
 
   var responseCode = alert.runModal();
@@ -288,7 +317,7 @@ function setPlugin(defaultSettings) {
         APIKey: APIKeyField.stringValue(),
         bases: basesField.stringValue()
       };
-      Settings.setSettingForKey('sketchAirtableSyncSettings', pluginSettings);
+      Settings.setSettingForKey('airtableSketchSyncSettings', pluginSettings);
       return pluginSettings;
     } else {
       return false;
@@ -440,31 +469,20 @@ function createSelect(items, selectedItemIndex, frame) {
 /*!*************************!*\
   !*** ./src/settings.js ***!
   \*************************/
-/*! exports provided: pluginSettings, default */
+/*! exports provided: default */
 /***/ (function(module, __webpack_exports__, __webpack_require__) {
 
 "use strict";
 __webpack_require__.r(__webpack_exports__);
-/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "pluginSettings", function() { return pluginSettings; });
-var _require = __webpack_require__(/*! sketch */ "sketch"),
-    Settings = _require.Settings;
+var _require = __webpack_require__(/*! ./defaults */ "./src/defaults.js"),
+    getSettings = _require.getSettings;
 
 var _require2 = __webpack_require__(/*! ./lib/alert */ "./src/lib/alert.js"),
     setPlugin = _require2.setPlugin;
 
-var pluginSettings = Settings.settingForKey('sketchAirtableSyncSettings');
-var defaultSettings = {};
-
-if (pluginSettings) {
-  defaultSettings.APIKey = pluginSettings.APIKey;
-  defaultSettings.bases = pluginSettings.bases;
-} else {
-  defaultSettings.APIKey = '';
-  defaultSettings.bases = '';
-}
-
 /* harmony default export */ __webpack_exports__["default"] = (function () {
-  setPlugin(defaultSettings);
+  var settings = getSettings();
+  setPlugin(settings);
 });
 
 /***/ }),

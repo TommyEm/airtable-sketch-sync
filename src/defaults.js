@@ -10,12 +10,12 @@ export const views = ['Grid view'];
 
 
 const defaultBases = {
-	"baseName1": "Base Key",
-	"baseName2": "Base Key"
+	"baseName1": "Insert Base Key",
+	"baseName2": "Insert Base Key"
 };
 
 
-export function getDefaultOptions() {
+export function getOptions() {
 	let defaultOptions = {};
 	const pluginOptions = Settings.settingForKey('sketchAirtableSync');
 
@@ -26,7 +26,7 @@ export function getDefaultOptions() {
 		defaultOptions.lang = pluginOptions.lang;
 		defaultOptions.underlineColor = pluginOptions.underlineColor;
 
-	} else {
+	} else { // Defaults
 		defaultOptions.base = defaultBases[0];
 		defaultOptions.maxRecords = 100;
 		defaultOptions.view = views[0];
@@ -38,6 +38,35 @@ export function getDefaultOptions() {
 }
 
 
-const { bases } = Settings.settingForKey('sketchAirtableSyncSettings');
+/**
+ * Get saved settings if they exist, otherwise returns default ones
+ * @returns {object}
+ */
+export function getSettings() {
+	let defaultSettings = {};
+	const pluginSettings = Settings.settingForKey('airtableSketchSyncSettings');
 
-export const baseNames = Object.keys(JSON.parse(bases)).map(base => base);
+	if (pluginSettings) {
+		defaultSettings.APIKey = pluginSettings.APIKey;
+		defaultSettings.bases = pluginSettings.bases;
+
+	} else {
+		defaultSettings.APIKey = 'Insert APIKey';
+		defaultSettings.bases = JSON.stringify(defaultBases, null, 2);
+	}
+
+	return defaultSettings;
+}
+
+
+const storedSettings = Settings.settingForKey('airtableSketchSyncSettings');
+let names = [];
+
+if (storedSettings) {
+	const { bases } = storedSettings;
+	names = Object.keys(JSON.parse(bases)).map(base => base);
+} else {
+	names = Object.keys(defaultBases).map(base => base);
+}
+
+export const baseNames = names;

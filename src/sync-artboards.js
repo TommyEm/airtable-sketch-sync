@@ -2,14 +2,13 @@ const sketch = require('sketch');
 const document = require('sketch/dom').getSelectedDocument();
 const { SymbolMaster } = require('sketch/dom');
 const Bluebird = require('bluebird');
-const { pluginSettings } = require('./settings');
 const {
 	getUserOptions,
 	getSubstituteText,
 	displayError,
 	progress,
 } = require('./lib/alert');
-const { getDefaultOptions } = require('./defaults');
+const { getOptions, getSettings } = require('./defaults');
 const {
 	getApiEndpoint,
 	getCleanArtboardName,
@@ -20,7 +19,7 @@ const { parse } = require('@textlint/markdown-to-ast');
 
 
 const foreignSymbolMasters = getForeignSymbolMasters(document);
-const defaultOptions = getDefaultOptions();
+const defaultOptions = getOptions();
 let { underlineColor } = defaultOptions;
 
 
@@ -91,12 +90,12 @@ export function syncSelectedArtboards(context) {
 				artboards,
 				layer => {
 					if (layer.type === 'Artboard') {
-						log('Artboard');
+						log('Syncing artboard...');
 						progressModal.increment(increment);
 						return syncArtboard(layer, userOptions);
 
 					} else {
-						log(layer.name);
+						log('Syncing layer...', layer.name);
 						return displayError('No artboards are selected. Please select one or more.');
 					}
 				},
@@ -193,7 +192,8 @@ function resetArtboard(parentLayers, substituteText) {
  */
 function syncArtboard(artboard, options) {
 	const table = getCleanArtboardName(artboard.name);
-	const bases = JSON.parse(pluginSettings.bases);
+	const settings = getSettings();
+	const bases = JSON.parse(settings.bases);
 	const base = bases[options.base];
 
 	const commonDataApiEndpoint = getApiEndpoint(
@@ -201,7 +201,7 @@ function syncArtboard(artboard, options) {
 		'Global Template',
 		options.maxRecords,
 		options.view,
-		pluginSettings.APIKey,
+		settings.APIKey,
 	);
 
 	return new Bluebird((resolve, reject) => {
@@ -215,7 +215,7 @@ function syncArtboard(artboard, options) {
 				table,
 				options.maxRecords,
 				options.view,
-				pluginSettings.APIKey,
+				settings.APIKey,
 			);
 
 			return fetch(apiEndpoint)
@@ -227,6 +227,7 @@ function syncArtboard(artboard, options) {
 					[]
 				));
 		})
+		// TODO: Catch error if no Global Template table is present: pass
 		.then(() => {
 			log('Artboard synced');
 			return 'Artboard synced';

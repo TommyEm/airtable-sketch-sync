@@ -1,13 +1,12 @@
-const sketch = require('sketch');
+const { Settings } = require('sketch');
 const document = require('sketch/dom').getSelectedDocument();
-const { Settings } = sketch;
 const {
     createBoldLabel,
     createField,
     createSelect,
 } = require('./ui');
 const {
-	getDefaultOptions,
+	getOptions,
 	baseNames,
 	langs,
 } = require('../defaults');
@@ -18,10 +17,11 @@ const views = ['Grid view'];
 const labelWidth = 100;
 const labelHeight = 24;
 const fieldWidth = 150;
+const fieldWidthLarge = 400;
 const fieldHeight = 28;
 const fieldSpacing = 20;
 
-const defaultOptions = getDefaultOptions();
+const defaultOptions = getOptions();
 
 
 /**
@@ -158,9 +158,9 @@ export function getUserOptions() {
 
 /**
  * Plugin Settings (API Key)
- * @param {object} defaultSettings
+ * @param {object} settings
  */
-export function setPlugin(defaultSettings) {
+export function setPlugin(settings) {
 	const alert = NSAlert.alloc().init(),
 		alertIconPath = context.plugin.urlForResourceNamed('icon.png').path(),
 		alertIcon = NSImage.alloc().initByReferencingFile(alertIconPath),
@@ -170,7 +170,7 @@ export function setPlugin(defaultSettings) {
 	alert.setMessageText('Sketch Airtable Sync');
 	alert.setInformativeText('Settings');
 	// Buttons
-	alert.addButtonWithTitle('OK');
+	alert.addButtonWithTitle('Save');
 	alert.addButtonWithTitle('Cancel');
 
 	alertContent.setFlipped(true);
@@ -186,8 +186,8 @@ export function setPlugin(defaultSettings) {
 	alertContent.addSubview(APIKeyLabel);
 
 	const APIKeyField = createField(
-		defaultSettings.APIKey,
-		NSMakeRect(labelWidth, offsetY, fieldWidth, fieldHeight));
+		settings.APIKey,
+		NSMakeRect(labelWidth, offsetY, fieldWidthLarge, fieldHeight));
 	alertContent.addSubview(APIKeyField);
 
 	offsetY = CGRectGetMaxY(alertContent.subviews().lastObject().frame()) + fieldSpacing;
@@ -201,15 +201,15 @@ export function setPlugin(defaultSettings) {
 	alertContent.addSubview(basesLabel);
 
 	const basesField = createField(
-		defaultSettings.bases,
-		NSMakeRect(labelWidth, offsetY, fieldWidth, 300));
+		settings.bases,
+		NSMakeRect(labelWidth, offsetY, fieldWidthLarge, 300));
 	alertContent.addSubview(basesField);
 
 
 	alertContent.frame = NSMakeRect(
 		0,
 		20,
-		300,
+		500,
 		CGRectGetMaxY(alertContent.subviews().lastObject().frame())
 	);
 	alert.accessoryView = alertContent;
@@ -225,7 +225,7 @@ export function setPlugin(defaultSettings) {
 				bases: basesField.stringValue(),
 			};
 
-			Settings.setSettingForKey('sketchAirtableSyncSettings', pluginSettings);
+			Settings.setSettingForKey('airtableSketchSyncSettings', pluginSettings);
 
 			return pluginSettings;
 

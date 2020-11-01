@@ -2,19 +2,18 @@ const sketch = require('sketch');
 const { DataSupplier } = sketch;
 const util = require('util');
 const fetch = require("sketch-polyfill-fetch");
-const { bases } = require('./secret');
 const { getUserOptions, displayError } = require('./lib/alert');
-const { pluginSettings } = require('./settings');
 const {
-	getDefaultOptions,
 	baseNames,
+	getOptions,
+	getSettings,
 	langs,
 } = require('./defaults');
 const { getApiEndpoint, stripMarkdownFromText } = require('./lib/utils');
 const { parse } = require('@textlint/markdown-to-ast');
 
 const document = require('sketch/dom').getSelectedDocument();
-const defaultOptions = getDefaultOptions();
+const defaultOptions = getOptions();
 
 
 export function onStartup() {
@@ -40,6 +39,7 @@ export function syncSelectedLayer(sketchDataKey, items) {
 
 	// Get user options from modal
 	const userOptions = getUserOptions(defaultOptions, baseNames, langs);
+	const settings = getSettings();
 
 
 	if (userOptions) {
@@ -72,6 +72,7 @@ export function syncSelectedLayer(sketchDataKey, items) {
 			if (layer.getParentArtboard()) {
 
 				const currentTable = layer.getParentArtboard().name;
+				const bases = JSON.parse(settings.bases);
 				const currentBase = bases[userOptions.base];
 
 				const apiEndpoint = getApiEndpoint(
@@ -79,7 +80,7 @@ export function syncSelectedLayer(sketchDataKey, items) {
 					currentTable,
 					userOptions.maxRecords,
 					userOptions.view,
-					pluginSettings.APIKey,
+					settings.APIKey,
 				);
 
 				fetch(apiEndpoint)

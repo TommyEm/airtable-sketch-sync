@@ -1,6 +1,6 @@
-# Sketch Airtable Sync
+# Airtable-Sketch Sync
 
-This plugin populates Sketch artboards with content from an Airtable base. It supports rich text for simple layers (not content passed through symbol overrides).
+This plugin populates Sketch artboards with content from an Airtable base. It supports rich text for regular layers, but in overrides.
 
 ## Installation
 
@@ -21,7 +21,7 @@ To work properly, content should be structured as follows:
 
 ### Settings
 
-Go to `Plugins > Sketch Airtable Sync > Settings`.
+Go to `Plugins > Airtable-Sketch Sync > Settings`.
 Insert your Airtable API Key.
 Insert your bases keys in JSON format.
 
@@ -35,11 +35,11 @@ Insert your bases keys in JSON format.
 ### Sync a selection of artboards
 
 Select one or more artboards.
-Go to `Plugins > Sketch Airtable Sync > Sync Selected Artboards` (shortcut `Shift Command D`).
+Go to `Plugins > Airtable-Sketch Sync > Sync Selected Artboards` (shortcut `Shift Command D`).
 
 ### Sync all artboards on the page
 
-Go to `Plugins > Sketch Airtable Sync > Sync All Artboards`.
+Go to `Plugins > Airtable-Sketch Sync > Sync All Artboards`.
 
 ### Sync options
 

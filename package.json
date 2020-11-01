@@ -1,14 +1,14 @@
 {
-  "name": "sketch-airtable-sync",
+  "name": "airtable-sketch-sync",
   "version": "1.0.0",
-  "description": "A DataSupplier plugin",
+  "description": "Sync content from Airtable to Sketch.",
   "engines": {
     "sketch": ">=3.0"
   },
   "skpm": {
-    "name": "sketch-airtable-sync",
+    "name": "airtable-sketch-sync",
     "manifest": "src/manifest.json",
-    "main": "sketch-airtable-sync.sketchplugin",
+    "main": "airtable-sketch-sync.sketchplugin",
     "assets": [
       "assets/**/*"
     ]
@@ -24,6 +24,6 @@
     "@textlint/markdown-to-ast": "^6.1.7",
     "airtable": "^0.8.1"
   },
-  "author": "Tommy Mabrier <tommy.mabrier@kubity.com>",
+  "author": "Tommy Em",
   "dependencies": {}
 }

@@ -1,7 +1,7 @@
 const { Settings } = require('sketch');
 
 
-export const langs = [
+export const defaultLangs = [
 	'en_US',
 	'en_UK',
 	'fr_FR',
@@ -31,7 +31,7 @@ export function getOptions() {
 		defaultOptions.base = defaultBases[0];
 		defaultOptions.maxRecords = 100;
 		defaultOptions.view = views[0];
-		defaultOptions.lang = langs[0];
+		defaultOptions.lang = defaultLangs[0];
 		defaultOptions.underlineColor = '0000FF';
 		defaultOptions.commonData = 'Common';
 	}
@@ -51,10 +51,12 @@ export function getSettings() {
 	if (pluginSettings) {
 		defaultSettings.APIKey = pluginSettings.APIKey;
 		defaultSettings.bases = pluginSettings.bases;
+		defaultSettings.langs = pluginSettings.langs;
 
 	} else {
 		defaultSettings.APIKey = 'Insert APIKey';
 		defaultSettings.bases = JSON.stringify(defaultBases, null, 2);
+		defaultSettings.langs = JSON.stringify(defaultLangs);
 	}
 
 	return defaultSettings;

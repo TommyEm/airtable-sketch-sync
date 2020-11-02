@@ -7,7 +7,6 @@ const {
 	baseNames,
 	getOptions,
 	getSettings,
-	langs,
 } = require('./defaults');
 const { getApiEndpoint, stripMarkdownFromText } = require('./lib/utils');
 const { parse } = require('@textlint/markdown-to-ast');
@@ -38,8 +37,9 @@ export function onSupplyData(context) {
 export function syncSelectedLayer(sketchDataKey, items) {
 
 	// Get user options from modal
-	const userOptions = getUserOptions(defaultOptions, baseNames, langs);
 	const settings = getSettings();
+	const langs = JSON.parse(settings.langs);
+	const userOptions = getUserOptions(defaultOptions, baseNames, langs);
 
 
 	if (userOptions) {

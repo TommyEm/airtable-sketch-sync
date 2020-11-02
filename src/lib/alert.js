@@ -6,9 +6,9 @@ const {
     createSelect,
 } = require('./ui');
 const {
-	getOptions,
 	baseNames,
-	langs,
+	getOptions,
+	getSettings,
 } = require('../defaults');
 
 const views = ['Grid view'];
@@ -43,6 +43,8 @@ export function getUserOptions() {
 	alertContent.setFlipped(true);
 
 	let offsetY = 24;
+	const settings = getSettings();
+	const langs = JSON.parse(settings.langs);
 
 
 	// Select base (Project)
@@ -221,6 +223,21 @@ export function setPlugin(settings) {
 		NSMakeRect(labelWidth, offsetY, fieldWidthLarge, 300));
 	alertContent.addSubview(basesField);
 
+	offsetY = CGRectGetMaxY(alertContent.subviews().lastObject().frame()) + fieldSpacing;
+
+
+	// Languages (Fields)
+	const langsLabel = createBoldLabel(
+		'Bases',
+		12,
+		NSMakeRect(0, offsetY, fieldWidth, labelHeight));
+	alertContent.addSubview(langsLabel);
+
+	const langsField = createField(
+		settings.langs,
+		NSMakeRect(labelWidth, offsetY, fieldWidthLarge, 100));
+	alertContent.addSubview(langsField);
+
 
 	alertContent.frame = NSMakeRect(
 		0,
@@ -239,6 +256,7 @@ export function setPlugin(settings) {
 			const pluginSettings = {
 				APIKey: APIKeyField.stringValue(),
 				bases: basesField.stringValue(),
+				langs: langsField.stringValue(),
 			};
 
 			Settings.setSettingForKey('airtableSketchSyncSettings', pluginSettings);

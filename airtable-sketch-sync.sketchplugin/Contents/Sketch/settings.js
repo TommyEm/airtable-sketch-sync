@@ -95,12 +95,12 @@ var exports =
 /*!*************************!*\
   !*** ./src/defaults.js ***!
   \*************************/
-/*! exports provided: langs, views, getOptions, getSettings, baseNames */
+/*! exports provided: defaultLangs, views, getOptions, getSettings, baseNames */
 /***/ (function(module, __webpack_exports__, __webpack_require__) {
 
 "use strict";
 __webpack_require__.r(__webpack_exports__);
-/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "langs", function() { return langs; });
+/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "defaultLangs", function() { return defaultLangs; });
 /* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "views", function() { return views; });
 /* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "getOptions", function() { return getOptions; });
 /* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "getSettings", function() { return getSettings; });
@@ -108,7 +108,7 @@ __webpack_require__.r(__webpack_exports__);
 var _require = __webpack_require__(/*! sketch */ "sketch"),
     Settings = _require.Settings;
 
-var langs = ['en_US', 'en_UK', 'fr_FR'];
+var defaultLangs = ['en_US', 'en_UK', 'fr_FR'];
 var views = ['Grid view'];
 var defaultBases = {
   "baseName1": "Insert Base Key",
@@ -130,7 +130,7 @@ function getOptions() {
     defaultOptions.base = defaultBases[0];
     defaultOptions.maxRecords = 100;
     defaultOptions.view = views[0];
-    defaultOptions.lang = langs[0];
+    defaultOptions.lang = defaultLangs[0];
     defaultOptions.underlineColor = '0000FF';
     defaultOptions.commonData = 'Common';
   }
@@ -149,9 +149,11 @@ function getSettings() {
   if (pluginSettings) {
     defaultSettings.APIKey = pluginSettings.APIKey;
     defaultSettings.bases = pluginSettings.bases;
+    defaultSettings.langs = pluginSettings.langs;
   } else {
     defaultSettings.APIKey = 'Insert APIKey';
     defaultSettings.bases = JSON.stringify(defaultBases, null, 2);
+    defaultSettings.langs = JSON.stringify(defaultLangs);
   }
 
   return defaultSettings;
@@ -199,9 +201,9 @@ var _require2 = __webpack_require__(/*! ./ui */ "./src/lib/ui.js"),
     createSelect = _require2.createSelect;
 
 var _require3 = __webpack_require__(/*! ../defaults */ "./src/defaults.js"),
-    getOptions = _require3.getOptions,
     baseNames = _require3.baseNames,
-    langs = _require3.langs;
+    getOptions = _require3.getOptions,
+    getSettings = _require3.getSettings;
 
 var views = ['Grid view']; // UI Settings
 
@@ -228,7 +230,9 @@ function getUserOptions() {
   alert.addButtonWithTitle('OK');
   alert.addButtonWithTitle('Cancel');
   alertContent.setFlipped(true);
-  var offsetY = 24; // Select base (Project)
+  var offsetY = 24;
+  var settings = getSettings();
+  var langs = JSON.parse(settings.langs); // Select base (Project)
 
   var baseLabel = createBoldLabel('Base', 12, NSMakeRect(0, offsetY, fieldWidth, labelHeight));
   alertContent.addSubview(baseLabel);
@@ -315,6 +319,12 @@ function setPlugin(settings) {
   alertContent.addSubview(basesLabel);
   var basesField = createField(settings.bases, NSMakeRect(labelWidth, offsetY, fieldWidthLarge, 300));
   alertContent.addSubview(basesField);
+  offsetY = CGRectGetMaxY(alertContent.subviews().lastObject().frame()) + fieldSpacing; // Languages (Fields)
+
+  var langsLabel = createBoldLabel('Bases', 12, NSMakeRect(0, offsetY, fieldWidth, labelHeight));
+  alertContent.addSubview(langsLabel);
+  var langsField = createField(settings.langs, NSMakeRect(labelWidth, offsetY, fieldWidthLarge, 100));
+  alertContent.addSubview(langsField);
   alertContent.frame = NSMakeRect(0, 20, 500, CGRectGetMaxY(alertContent.subviews().lastObject().frame()));
   alert.accessoryView = alertContent; // Display alert
 
@@ -324,7 +334,8 @@ function setPlugin(settings) {
     if (responseCode === 1000) {
       var pluginSettings = {
         APIKey: APIKeyField.stringValue(),
-        bases: basesField.stringValue()
+        bases: basesField.stringValue(),
+        langs: langsField.stringValue()
       };
       Settings.setSettingForKey('airtableSketchSyncSettings', pluginSettings);
       return pluginSettings;

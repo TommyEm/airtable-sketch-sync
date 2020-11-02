@@ -16889,20 +16889,30 @@ function syncArtboard(artboard, options) {
   var base = bases[options.base];
   var commonDataApiEndpoint = getApiEndpoint(base, 'Global Template', options.maxRecords, options.view, settings.APIKey);
   return new Bluebird(function (resolve, reject) {
+    // First, get any common data
     fetch(commonDataApiEndpoint).then(function (res) {
       return resolve(res.json());
     });
   }).delay(1000).then(function (commonData) {
-    var apiEndpoint = getApiEndpoint(base, table, options.maxRecords, options.view, settings.APIKey);
+    var apiEndpoint = getApiEndpoint(base, table, options.maxRecords, options.view, settings.APIKey); // Second, get the data for the current artboard
+
     return fetch(apiEndpoint).then(function (res) {
+      if (!res.ok) {
+        throw new Error("No artboard named \"".concat(artboard.name, "\" found in the selected Airtable base."));
+      }
+
       return res.json();
     }).then(function (data) {
+      // Add the common records if there are any
+      var records = commonData.records ? [].concat(_toConsumableArray(commonData.records), _toConsumableArray(data.records)) : _toConsumableArray(data.records);
       return syncLayer(artboard, {
-        records: [].concat(_toConsumableArray(commonData.records), _toConsumableArray(data.records))
+        records: records
       }, options, []);
+    }).catch(function (error) {
+      console.log('Error', error.message);
+      displayError(error.message);
     });
-  }) // TODO: Catch error if no Global Template table is present: pass
-  .then(function () {
+  }).then(function () {
     log('Artboard synced');
     return 'Artboard synced';
   }).catch(function (error) {

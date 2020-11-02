@@ -205,6 +205,7 @@ function syncArtboard(artboard, options) {
 	);
 
 	return new Bluebird((resolve, reject) => {
+		// First, get any common data
 		fetch(commonDataApiEndpoint)
 			.then((res) => resolve(res.json()))
 	})
@@ -218,16 +219,30 @@ function syncArtboard(artboard, options) {
 				settings.APIKey,
 			);
 
+			// Second, get the data for the current artboard
 			return fetch(apiEndpoint)
-				.then((res) => res.json())
-				.then((data) => syncLayer(
-					artboard,
-					{ records: [...commonData.records, ...data.records] },
-					options,
-					[]
-				));
+				.then((res) => {
+					if (!res.ok) {
+						throw new Error(`No artboard named "${artboard.name}" found in the selected Airtable base.`);
+					}
+					return res.json();
+				})
+				.then((data) => {
+					// Add the common records if there are any
+					const records = commonData.records ? [...commonData.records, ...data.records] : [...data.records];
+
+					return syncLayer(
+						artboard,
+						{ records: records },
+						options,
+						[]
+					)}
+				)
+				.catch(error => {
+					console.log('Error', error.message);
+					displayError(error.message);
+				});
 		})
-		// TODO: Catch error if no Global Template table is present: pass
 		.then(() => {
 			log('Artboard synced');
 			return 'Artboard synced';

@@ -9,7 +9,7 @@ export const defaultLangs = [
 export const views = ['Grid view'];
 
 
-const defaultBases = {
+export const defaultBases = {
 	"baseName1": "Insert Base Key",
 	"baseName2": "Insert Base Key"
 };

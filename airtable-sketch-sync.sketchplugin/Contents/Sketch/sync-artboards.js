@@ -16258,13 +16258,14 @@ function extend() {
 /*!*************************!*\
   !*** ./src/defaults.js ***!
   \*************************/
-/*! exports provided: defaultLangs, views, getOptions, getSettings, baseNames */
+/*! exports provided: defaultLangs, views, defaultBases, getOptions, getSettings, baseNames */
 /***/ (function(module, __webpack_exports__, __webpack_require__) {
 
 "use strict";
 __webpack_require__.r(__webpack_exports__);
 /* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "defaultLangs", function() { return defaultLangs; });
 /* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "views", function() { return views; });
+/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "defaultBases", function() { return defaultBases; });
 /* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "getOptions", function() { return getOptions; });
 /* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "getSettings", function() { return getSettings; });
 /* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "baseNames", function() { return baseNames; });
@@ -16365,6 +16366,8 @@ var _require2 = __webpack_require__(/*! ./ui */ "./src/lib/ui.js"),
 
 var _require3 = __webpack_require__(/*! ../defaults */ "./src/defaults.js"),
     baseNames = _require3.baseNames,
+    defaultBases = _require3.defaultBases,
+    defaultLangs = _require3.defaultLangs,
     getOptions = _require3.getOptions,
     getSettings = _require3.getSettings;
 
@@ -16484,7 +16487,7 @@ function setPlugin(settings) {
   alertContent.addSubview(basesField);
   offsetY = CGRectGetMaxY(alertContent.subviews().lastObject().frame()) + fieldSpacing; // Languages (Fields)
 
-  var langsLabel = createBoldLabel('Bases', 12, NSMakeRect(0, offsetY, fieldWidth, labelHeight));
+  var langsLabel = createBoldLabel('Languages', 12, NSMakeRect(0, offsetY, fieldWidth, labelHeight));
   alertContent.addSubview(langsLabel);
   var langsField = createField(settings.langs, NSMakeRect(labelWidth, offsetY, fieldWidthLarge, 100));
   alertContent.addSubview(langsField);
@@ -16495,10 +16498,13 @@ function setPlugin(settings) {
 
   if (responseCode == NSAlertFirstButtonReturn) {
     if (responseCode === 1000) {
+      var APIKey = APIKeyField.stringValue() == '' ? 'Insert API Key' : APIKeyField.stringValue();
+      var bases = basesField.stringValue() == '' ? JSON.stringify(defaultBases, null, 2) : basesField.stringValue();
+      var langs = langsField.stringValue() == '' ? JSON.stringify(defaultLangs) : langsField.stringValue();
       var pluginSettings = {
-        APIKey: APIKeyField.stringValue(),
-        bases: basesField.stringValue(),
-        langs: langsField.stringValue()
+        APIKey: APIKey,
+        bases: bases,
+        langs: langs
       };
       Settings.setSettingForKey('airtableSketchSyncSettings', pluginSettings);
       return pluginSettings;
@@ -16923,8 +16929,7 @@ function syncArtboard(artboard, options) {
 
       return res.json();
     }).then(function (data) {
-      console.log(data); // Add the common records if there are any
-
+      // Add the common records if there are any
       var records = commonData.records ? [].concat(_toConsumableArray(commonData.records), _toConsumableArray(data.records)) : _toConsumableArray(data.records);
       return syncLayer(artboard, {
         records: records

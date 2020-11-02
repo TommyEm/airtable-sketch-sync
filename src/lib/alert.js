@@ -7,6 +7,8 @@ const {
 } = require('./ui');
 const {
 	baseNames,
+	defaultBases,
+	defaultLangs,
 	getOptions,
 	getSettings,
 } = require('../defaults');
@@ -228,7 +230,7 @@ export function setPlugin(settings) {
 
 	// Languages (Fields)
 	const langsLabel = createBoldLabel(
-		'Bases',
+		'Languages',
 		12,
 		NSMakeRect(0, offsetY, fieldWidth, labelHeight));
 	alertContent.addSubview(langsLabel);
@@ -253,10 +255,14 @@ export function setPlugin(settings) {
 
 	if (responseCode == NSAlertFirstButtonReturn) {
 		if (responseCode === 1000) {
+			const APIKey = APIKeyField.stringValue() == '' ? 'Insert API Key' : APIKeyField.stringValue();
+			const bases = basesField.stringValue() == '' ? JSON.stringify(defaultBases, null, 2) : basesField.stringValue();
+			const langs = langsField.stringValue() == '' ? JSON.stringify(defaultLangs) : langsField.stringValue();
+
 			const pluginSettings = {
-				APIKey: APIKeyField.stringValue(),
-				bases: basesField.stringValue(),
-				langs: langsField.stringValue(),
+				APIKey,
+				bases,
+				langs,
 			};
 
 			Settings.setSettingForKey('airtableSketchSyncSettings', pluginSettings);

@@ -228,7 +228,6 @@ function syncArtboard(artboard, options) {
 					return res.json();
 				})
 				.then((data) => {
-					console.log(data);
 					// Add the common records if there are any
 					const records = commonData.records ? [...commonData.records, ...data.records] : [...data.records];
 

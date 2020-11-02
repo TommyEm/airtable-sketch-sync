@@ -16918,7 +16918,7 @@ function syncArtboard(artboard, options) {
         records: records
       }, options, []);
     }).catch(function (error) {
-      console.log('Error', error.message);
+      console.log('Error', error);
       displayError(error.message);
     });
   }).then(function () {
@@ -17019,30 +17019,34 @@ function updateLayerValue(data, layer, layerName, options, layerFullPath, symbol
 
   data.records.reverse().map(function (record) {
     var recordName = record.fields.Name;
-    var recordNames = recordName.split('/').map(function (name) {
-      return name.trim();
-    }); // const reg = new RegExp(recordNames.join('.*'), 'i');
 
-    var reg = new RegExp(recordNames.join('\\s\/.*\/\\s'), 'i'); // Check symbol with nested overrides. Record names must use a / (forward slash) for this.
-    // Template: "Symbol Name / Override Nested Name"
+    if (recordName) {
+      // Prevent records left blank in Airtable
+      var recordNames = recordName.split('/').map(function (name) {
+        return name.trim();
+      }); // const reg = new RegExp(recordNames.join('.*'), 'i');
 
-    if (symbolName) {
-      var fullName = layerFullPath + ' // ' + symbolName;
+      var reg = new RegExp(recordNames.join('\\s\/.*\/\\s'), 'i'); // Check symbol with nested overrides. Record names must use a / (forward slash) for this.
+      // Template: "Symbol Name / Override Nested Name"
 
-      if (fullName.match(reg)) {
-        injectValue(record, layer, lang);
-      } // Check nested and non-nested layers
+      if (symbolName) {
+        var fullName = layerFullPath + ' // ' + symbolName;
 
-    } else {
-      var _fullName = layerFullPath + ' // ' + layerName; // Conditions
+        if (fullName.match(reg)) {
+          injectValue(record, layer, lang);
+        } // Check nested and non-nested layers
+
+      } else {
+        var _fullName = layerFullPath + ' // ' + layerName; // Conditions
 
 
-      var nestedRecordMatchFullName = recordName.match(/\//) && _fullName.match(reg);
+        var nestedRecordMatchFullName = recordName.match(/\//) && _fullName.match(reg);
 
-      var notNestedLayerMatchRecord = !layerFullPath.match(/\//) && recordName === layerName;
+        var notNestedLayerMatchRecord = !layerFullPath.match(/\//) && recordName === layerName;
 
-      if (nestedRecordMatchFullName || notNestedLayerMatchRecord) {
-        injectValue(record, layer, lang);
+        if (nestedRecordMatchFullName || notNestedLayerMatchRecord) {
+          injectValue(record, layer, lang);
+        }
       }
     }
   });

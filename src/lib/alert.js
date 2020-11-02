@@ -122,6 +122,21 @@ export function getUserOptions() {
 		NSMakeRect(labelWidth, offsetY, fieldWidth, fieldHeight));
 	alertContent.addSubview(underlineColorField);
 
+	offsetY = CGRectGetMaxY(alertContent.subviews().lastObject().frame()) + fieldSpacing;
+
+
+	// Common data table name
+	const commonDataLabel = createBoldLabel(
+		'Common data',
+		12,
+		NSMakeRect(0, offsetY, fieldWidth, labelHeight));
+	alertContent.addSubview(commonDataLabel);
+
+	const commonDataField = createField(
+		defaultOptions.commonData,
+		NSMakeRect(labelWidth, offsetY, fieldWidth, fieldHeight));
+	alertContent.addSubview(commonDataField);
+
 
 	alertContent.frame = NSMakeRect(
 		0,
@@ -142,6 +157,7 @@ export function getUserOptions() {
 				maxRecords: maxRecordsField.stringValue(),
 				lang: langSelect.stringValue(),
 				underlineColor: underlineColorField.stringValue(),
+				commonData: commonDataField.stringValue(),
 			};
 
 			Settings.setSettingForKey('sketchAirtableSync', pluginOptions);

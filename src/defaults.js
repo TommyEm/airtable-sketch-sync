@@ -25,6 +25,7 @@ export function getOptions() {
 		defaultOptions.view = pluginOptions.view;
 		defaultOptions.lang = pluginOptions.lang;
 		defaultOptions.underlineColor = pluginOptions.underlineColor;
+		defaultOptions.commonData = pluginOptions.commonData;
 
 	} else { // Defaults
 		defaultOptions.base = defaultBases[0];
@@ -32,6 +33,7 @@ export function getOptions() {
 		defaultOptions.view = views[0];
 		defaultOptions.lang = langs[0];
 		defaultOptions.underlineColor = '0000FF';
+		defaultOptions.commonData = 'Common';
 	}
 
 	return defaultOptions;

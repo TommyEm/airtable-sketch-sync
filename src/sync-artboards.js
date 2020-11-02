@@ -198,7 +198,7 @@ function syncArtboard(artboard, options) {
 
 	const commonDataApiEndpoint = getApiEndpoint(
 		base,
-		'Global Template',
+		options.commonData,
 		options.maxRecords,
 		options.view,
 		settings.APIKey,

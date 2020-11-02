@@ -16287,6 +16287,7 @@ function getOptions() {
     defaultOptions.view = pluginOptions.view;
     defaultOptions.lang = pluginOptions.lang;
     defaultOptions.underlineColor = pluginOptions.underlineColor;
+    defaultOptions.commonData = pluginOptions.commonData;
   } else {
     // Defaults
     defaultOptions.base = defaultBases[0];
@@ -16294,6 +16295,7 @@ function getOptions() {
     defaultOptions.view = views[0];
     defaultOptions.lang = langs[0];
     defaultOptions.underlineColor = '0000FF';
+    defaultOptions.commonData = 'Common';
   }
 
   return defaultOptions;
@@ -16419,6 +16421,12 @@ function getUserOptions() {
   alertContent.addSubview(underlineColorLabel);
   var underlineColorField = createField(defaultOptions.underlineColor, NSMakeRect(labelWidth, offsetY, fieldWidth, fieldHeight));
   alertContent.addSubview(underlineColorField);
+  offsetY = CGRectGetMaxY(alertContent.subviews().lastObject().frame()) + fieldSpacing; // Common data table name
+
+  var commonDataLabel = createBoldLabel('Common data', 12, NSMakeRect(0, offsetY, fieldWidth, labelHeight));
+  alertContent.addSubview(commonDataLabel);
+  var commonDataField = createField(defaultOptions.commonData, NSMakeRect(labelWidth, offsetY, fieldWidth, fieldHeight));
+  alertContent.addSubview(commonDataField);
   alertContent.frame = NSMakeRect(0, 20, 300, CGRectGetMaxY(alertContent.subviews().lastObject().frame()));
   alert.accessoryView = alertContent; // Display alert
 
@@ -16431,7 +16439,8 @@ function getUserOptions() {
         view: viewSelect.stringValue(),
         maxRecords: maxRecordsField.stringValue(),
         lang: langSelect.stringValue(),
-        underlineColor: underlineColorField.stringValue()
+        underlineColor: underlineColorField.stringValue(),
+        commonData: commonDataField.stringValue()
       };
       Settings.setSettingForKey('sketchAirtableSync', pluginOptions);
       return pluginOptions;
@@ -16887,7 +16896,7 @@ function syncArtboard(artboard, options) {
   var settings = getSettings();
   var bases = JSON.parse(settings.bases);
   var base = bases[options.base];
-  var commonDataApiEndpoint = getApiEndpoint(base, 'Global Template', options.maxRecords, options.view, settings.APIKey);
+  var commonDataApiEndpoint = getApiEndpoint(base, options.commonData, options.maxRecords, options.view, settings.APIKey);
   return new Bluebird(function (resolve, reject) {
     // First, get any common data
     fetch(commonDataApiEndpoint).then(function (res) {

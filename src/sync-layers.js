@@ -16,7 +16,7 @@ const defaultOptions = getOptions();
 
 
 export function onStartup() {
-	DataSupplier.registerDataSupplier('public.text', 'Sketch Airtable Sync', 'SupplyData');
+	DataSupplier.registerDataSupplier('public.text', 'AirSketch', 'SupplyData');
 }
 
 

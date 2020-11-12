@@ -1,5 +1,5 @@
 {
-  "name": "Airtable-Sketch Sync",
+  "name": "AirSketch",
   "description": "Sync content from Airtable to Sketch.",
   "compatibleVersion": 3,
   "bundleVersion": 1,
@@ -18,7 +18,7 @@
     },
     {
       "name": "📝 Sync all artboards",
-      "identifier": "airtable-sketch-sync.sync-all-artboards-identifier",
+      "identifier": "airsketch.sync-all-artboards-identifier",
       "script": "sync-artboards.js",
       "handlers": {
         "run": "syncAllArtboards"
@@ -27,7 +27,7 @@
     },
     {
       "name": "📝 Sync selected artboards",
-      "identifier": "airtable-sketch-sync.sync-selected-artboards-identifier",
+      "identifier": "airsketch.sync-selected-artboards-identifier",
 	  "script": "sync-artboards.js",
 	  "shortcut": "cmd shift d",
       "handlers": {
@@ -37,7 +37,7 @@
     },
     {
       "name": "📝 Reset selected artboards",
-      "identifier": "airtable-sketch-sync.reset-selected-artboards-identifier",
+      "identifier": "airsketch.reset-selected-artboards-identifier",
 	  "script": "sync-artboards.js",
 	  "shortcut":"cmd shift c",
       "handlers": {
@@ -47,19 +47,19 @@
     },
     {
       "name": "⚙️ Settings",
-      "identifier": "airtable-sketch-sync.settings-identifier",
+      "identifier": "airsketch.settings-identifier",
       "script": "settings.js"
     }
   ],
   "menu": {
-    "title": "Airtable-Sketch Sync",
+    "title": "AirSketch",
     "items": [
-	  "airtable-sketch-sync.settings-identifier",
+	  "airsketch.settings-identifier",
 	  "-",
-      "airtable-sketch-sync.sync-all-artboards-identifier",
-	  "airtable-sketch-sync.sync-selected-artboards-identifier",
+      "airsketch.sync-all-artboards-identifier",
+	  "airsketch.sync-selected-artboards-identifier",
 	  "-",
-	  "airtable-sketch-sync.reset-selected-artboards-identifier"
+	  "airsketch.reset-selected-artboards-identifier"
     ]
   }
 }

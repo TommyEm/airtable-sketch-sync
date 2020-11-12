@@ -17,7 +17,7 @@ export const defaultBases = {
 
 export function getOptions() {
 	let defaultOptions = {};
-	const pluginOptions = Settings.settingForKey('sketchAirtableSync');
+	const pluginOptions = Settings.settingForKey('airSketch');
 
 	if (pluginOptions) {
 		defaultOptions.base = pluginOptions.base;
@@ -46,7 +46,7 @@ export function getOptions() {
  */
 export function getSettings() {
 	let defaultSettings = {};
-	const pluginSettings = Settings.settingForKey('airtableSketchSyncSettings');
+	const pluginSettings = Settings.settingForKey('airSketchSettings');
 
 	if (pluginSettings) {
 		defaultSettings.APIKey = pluginSettings.APIKey;
@@ -63,7 +63,7 @@ export function getSettings() {
 }
 
 
-const storedSettings = Settings.settingForKey('airtableSketchSyncSettings');
+const storedSettings = Settings.settingForKey('airSketchSettings');
 let names = [];
 
 if (storedSettings) {

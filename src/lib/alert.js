@@ -36,7 +36,7 @@ export function getUserOptions() {
 		alertContent = NSView.alloc().init();
 
 	alert.setIcon(alertIcon);
-	alert.setMessageText('Sketch Airtable Sync');
+	alert.setMessageText('AirSketch');
 	alert.setInformativeText('Sync artboards');
 	// Buttons
 	alert.addButtonWithTitle('OK');
@@ -164,7 +164,7 @@ export function getUserOptions() {
 				commonData: commonDataField.stringValue(),
 			};
 
-			Settings.setSettingForKey('sketchAirtableSync', pluginOptions);
+			Settings.setSettingForKey('AirSketch', pluginOptions);
 
 			return pluginOptions;
 
@@ -187,7 +187,7 @@ export function setPlugin(settings) {
 		alertContent = NSView.alloc().init();
 
 	alert.setIcon(alertIcon);
-	alert.setMessageText('Sketch Airtable Sync');
+	alert.setMessageText('AirSketch');
 	alert.setInformativeText('Settings');
 	// Buttons
 	alert.addButtonWithTitle('Save');
@@ -265,7 +265,7 @@ export function setPlugin(settings) {
 				langs,
 			};
 
-			Settings.setSettingForKey('airtableSketchSyncSettings', pluginSettings);
+			Settings.setSettingForKey('airSketchSettings', pluginSettings);
 
 			return pluginSettings;
 
@@ -287,7 +287,7 @@ export function getSubstituteText() {
 		alertContent = NSView.alloc().init();
 
 	alert.setIcon(alertIcon);
-	alert.setMessageText('Sketch Airtable Sync');
+	alert.setMessageText('AirSketch');
 	alert.setInformativeText('Reset layers content');
 	// Buttons
 	alert.addButtonWithTitle('OK');

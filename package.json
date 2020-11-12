@@ -1,14 +1,14 @@
 {
-  "name": "airtable-sketch-sync",
+  "name": "airsketch",
   "version": "1.0.0",
   "description": "Sync content from Airtable to Sketch.",
   "engines": {
     "sketch": ">=3.0"
   },
   "skpm": {
-    "name": "airtable-sketch-sync",
+    "name": "airsketch",
     "manifest": "src/manifest.json",
-    "main": "airtable-sketch-sync.sketchplugin",
+    "main": "airsketch.sketchplugin",
     "assets": [
       "assets/**/*"
     ]
@@ -24,6 +24,6 @@
     "@textlint/markdown-to-ast": "^6.1.7",
     "airtable": "^0.8.1"
   },
-  "author": "Tommy Em",
+  "author": "Tommy Mabrier",
   "dependencies": {}
 }
